@@ -4,7 +4,6 @@ import com.reas.tracker2.database.Repository
 import com.reas.tracker2.network.NetworkRepository
 import com.reas.tracker2.settings.Settings
 import com.reas.tracker2.settings.chartSort
-import com.reas.tracker2.settings.set
 import com.reas.tracker2.shared.Album
 import com.reas.tracker2.shared.Artist
 import com.reas.tracker2.shared.TimePeriod

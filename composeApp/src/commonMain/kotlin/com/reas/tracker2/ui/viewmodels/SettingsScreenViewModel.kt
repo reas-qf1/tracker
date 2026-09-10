@@ -3,7 +3,6 @@ package com.reas.tracker2.ui.viewmodels
 import androidx.lifecycle.viewModelScope
 import com.reas.tracker2.settings.Settings
 import com.reas.tracker2.settings.isScrobblingEnabled
-import com.reas.tracker2.settings.set
 import kotlinx.coroutines.launch
 
 class SettingsScreenViewModel(private val settings: Settings) : TrackerViewModel() {

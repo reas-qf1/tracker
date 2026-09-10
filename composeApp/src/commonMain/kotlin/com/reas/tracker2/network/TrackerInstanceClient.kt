@@ -3,15 +3,24 @@
 import com.reas.tracker2.api.EventAPI
 import com.reas.tracker2.api.PlayAPI
 import com.reas.tracker2.database.Repository
-import com.reas.tracker2.settings.*
+import com.reas.tracker2.settings.Settings
+import com.reas.tracker2.settings.instanceHostName
+import com.reas.tracker2.settings.instancePort
+import com.reas.tracker2.settings.username
 import com.reas.tracker2.shared.Event
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.*
-import io.ktor.client.plugins.websocket.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.websocket.*
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import io.ktor.http.path
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -31,11 +40,11 @@ class TrackerInstanceClient(
     private val settings: Settings
 ) {
     private val host_
-        get() = settings[instanceHostName]
+        get() = settings.getBlocking(instanceHostName)
     private val port_
-        get() = settings[instancePort]
+        get() = settings.getBlocking(instancePort)
     private val username_
-        get() = settings[username]
+        get() = settings.getBlocking(username)
     private var apiKey = ""
 
     private val queueLock = Mutex()

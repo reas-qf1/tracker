@@ -19,8 +19,6 @@ import com.reas.tracker2.R
 import com.reas.tracker2.database.Repository
 import com.reas.tracker2.network.TrackerInstanceClient
 import com.reas.tracker2.settings.Settings
-import com.reas.tracker2.settings.collect
-import com.reas.tracker2.settings.get
 import com.reas.tracker2.settings.isScrobblingEnabled
 import com.reas.tracker2.shared.Event
 import com.reas.tracker2.shared.EventProcessor
@@ -288,7 +286,7 @@ private class SessionListener: MediaSessionManager.OnActiveSessionsChangedListen
         val newControllerMap = ctrl.associateBy { it.packageName }
         val newControllers = newControllerMap.keys
 
-        val isScrobbling = settings[isScrobblingEnabled]
+        val isScrobbling = settings.getBlocking(isScrobblingEnabled)
 
         // rewire callbacks for any refreshed controllers with the same package name
         // (happens e.g. if the service gets restarted)

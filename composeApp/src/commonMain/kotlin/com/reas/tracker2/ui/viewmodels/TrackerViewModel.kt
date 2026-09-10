@@ -3,7 +3,8 @@ package com.reas.tracker2.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.*
-import com.reas.tracker2.settings.*
+import com.reas.tracker2.settings.Setting
+import com.reas.tracker2.settings.Settings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -36,11 +37,8 @@ open class TrackerViewModel : ViewModel() {
     internal fun<T : Any, R : Any> Flow<PagingData<T>>.mapElements(transform: suspend (T) -> R) =
         map { it.map(transform) }
 
-    internal fun<T> Settings.stateFlow(setting: Setting<T>) =
-        flow(setting).asStateFlow(this[setting])
-
-    internal fun<K, T> Settings.stateFlow(setting: SerializableSetting<K, T>) =
-        flow(setting).asStateFlow(this[setting])
+    internal fun<K, T> Settings.stateFlow(setting: Setting<K, T>) =
+        flow(setting).asStateFlow(this.getBlocking(setting))
 
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L

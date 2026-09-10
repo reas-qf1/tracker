@@ -4,6 +4,8 @@ import com.reas.tracker2.database.AppDatabase
 import com.reas.tracker2.database.Repository
 import com.reas.tracker2.database.RoomRepository
 import com.reas.tracker2.network.*
+import com.reas.tracker2.settings.DataStoreSettings
+import com.reas.tracker2.settings.Settings
 import com.reas.tracker2.settings.createDataStore
 import com.reas.tracker2.shared.EventProcessor
 import com.reas.tracker2.shared.EventProcessorAdapter
@@ -19,6 +21,7 @@ import org.koin.dsl.module
 
 val sharedModule = module {
     singleOf(::createDataStore)
+    singleOf(::DataStoreSettings) bind Settings::class
     single {
         RoomRepository(AppDatabase.getDatabase(get()))
     } bind Repository::class
