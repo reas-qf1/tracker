@@ -3,6 +3,9 @@ package com.reas.tracker2.util
 import com.reas.tracker2.buildConfig.IS_DEBUG
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 class InMemoryLog {
     companion object {
@@ -17,6 +20,6 @@ class InMemoryLog {
 
     suspend fun log(tag: String, message: () -> String) {
         if (!IS_DEBUG) return
-        get(tag).emit(message())
+        get(tag).emit(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toString() + " " + message())
     }
 }

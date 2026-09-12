@@ -3,7 +3,10 @@ package com.reas.tracker2
 import com.reas.tracker2.database.AppDatabase
 import com.reas.tracker2.database.Repository
 import com.reas.tracker2.database.RoomRepository
-import com.reas.tracker2.network.*
+import com.reas.tracker2.network.KtorNetworkRepository
+import com.reas.tracker2.network.NetworkRepository
+import com.reas.tracker2.network.httpClient
+import com.reas.tracker2.network.landscapistInstance
 import com.reas.tracker2.settings.DataStoreSettings
 import com.reas.tracker2.settings.Settings
 import com.reas.tracker2.settings.createDataStore
@@ -31,7 +34,6 @@ val sharedModule = module {
 
     singleOf(::EventProcessorAdapterImpl) bind EventProcessorAdapter::class
     singleOf(::EventProcessor)
-    singleOf(::TrackerInstanceClient)
     single { HolePlugger() }
     singleOf(::InMemoryLog)
     singleOf(::SecretManager)
@@ -44,6 +46,5 @@ val sharedModule = module {
     viewModelOf(::AlbumInfoScreenViewModel)
     viewModelOf(::TrackInfoScreenViewModel)
     viewModelOf(::SettingsScreenViewModel)
-    viewModelOf(::LoginDialogViewModel)
     viewModelOf(::DebugScreenViewModel)
 }

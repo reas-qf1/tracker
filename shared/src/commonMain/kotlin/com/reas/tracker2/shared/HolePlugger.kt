@@ -29,6 +29,7 @@ class HolePlugger(
             play.associatedEvents.add(EventInfo(
                 position = play.duration,
                 timestamp = play.endTimestamp,
+                speed = play.lastSpeed,
                 state = EventState.PLUGGED
             ))
             playFlow.emit(play)

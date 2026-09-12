@@ -1,26 +1,16 @@
 package com.reas.tracker2.database
 
 import androidx.paging.PagingSource
-import com.reas.tracker2.database.entities.*
-import com.reas.tracker2.network.SyncEvent
+import com.reas.tracker2.database.entities.AlbumEntity
+import com.reas.tracker2.database.entities.ArtistEntity
+import com.reas.tracker2.database.entities.PlayEntity
+import com.reas.tracker2.database.entities.TrackEntity
 import com.reas.tracker2.shared.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlin.time.Duration
-import kotlin.time.Instant
 
 interface Repository {
-    suspend fun insertEvent(event: Event): Long
-    suspend fun updateEvent(event: Event)
-    suspend fun deleteEvent(event: Event)
-    suspend fun deleteEvent(sourceApp: String, timestamp: Instant)
-    fun getEvents(): Flow<List<Event>>
-    suspend fun insertEventInSync(event: Event): Long
-    suspend fun updateEventInSync(event: Event)
-    suspend fun deleteEventInSync(event: Event)
-    fun getEventsInSync(): Flow<List<SyncEvent>>
-    suspend fun deleteFromSync(ids: List<Long>)
-
     suspend fun getArtist(id: Long): Artist
     suspend fun getArtists(ids: List<Long>): List<Artist>
     suspend fun getAlbum(id: Long): Album
@@ -74,18 +64,12 @@ interface Repository {
     fun getTrackRank(track: TrackWithAlbum, period: TimePeriod): Flow<Int>
     fun getTrackRankByPlayCount(track: TrackWithAlbum, period: TimePeriod) : Flow<Int>
 
-    suspend fun addKey(hostname: String, port: Int, username: String, key: String)
-    suspend fun deleteKey(hostname: String, port: Int, username: String)
-    suspend fun getKey(hostname: String, port: Int, username: String): String?
-
-    // functions for debug info
-    fun getEventCount(): Flow<Int>
-    fun getUnsyncedEventCount(): Flow<Int>
     fun getPlayCount(): Flow<Int>
 
     // oh my fucking god
     // TODO get rid of this when the paging library becomes good
     fun playEntityToObject(entity: PlayWithData) = Play(
+        id = entity.id,
         metadata = entity.metadata.toTrack(),
         timestamp = entity.timestamp,
         duration = entity.duration,
@@ -112,26 +96,8 @@ class RoomRepository(private val db: AppDatabase) : Repository {
         albumObject = albumId?.let { getAlbum(it) }
     )
 
-    private suspend fun Event.toEntity() = EventEntity(
-        trackId = getOrInsertTrack(metadata),
-        duration = duration,
-        state = state,
-        sourceApp = app,
-        timestamp = timestamp,
-        position = position
-    )
-    private suspend fun EventEntity.toObject() = Event(
-        metadata = getTrack(trackId),
-        info = EventInfo(
-            timestamp = timestamp,
-            position = position,
-            state = state,
-        ),
-        duration = duration,
-        source = Source.local(sourceApp)
-    )
-
     private suspend fun Play.toEntity() = PlayEntity(
+        id = id,
         trackId = getOrInsertTrack(metadata),
         artists = artistsAsString,
         albumArtists = albumArtistsAsString,
@@ -145,6 +111,7 @@ class RoomRepository(private val db: AppDatabase) : Repository {
         associatedEvents = associatedEvents,
     )
     private suspend fun PlayEntity.toObject() = Play(
+        id = id,
         metadata = getTrack(trackId).let { t ->
             TrackWithAlbum(
                 trackObject = t.asTrack.copy(artists = t.artists.copy(raw = artists)),
@@ -157,18 +124,6 @@ class RoomRepository(private val db: AppDatabase) : Repository {
         source = Source.user(sourceDevice, sourceApp),
         associatedEvents = associatedEvents,
     )
-
-    override suspend fun insertEvent(event: Event) = db.eventDao().insert(event.toEntity())
-    override suspend fun deleteEvent(event: Event) = db.eventDao().delete(event.toEntity())
-    override suspend fun deleteEvent(sourceApp: String, timestamp: Instant) = db.eventDao().delete(sourceApp, timestamp)
-    override suspend fun updateEvent(event: Event) = db.eventDao().update(event.toEntity())
-    override fun getEvents() = db.eventDao().getEvents().map { it.map { it.toObject() } }
-
-    override suspend fun insertEventInSync(event: Event) = db.syncQueueDao().insert(SyncQueueEntity(event.toEntity()))
-    override suspend fun deleteEventInSync(event: Event) = db.syncQueueDao().delete(SyncQueueEntity(event.toEntity()))
-    override suspend fun updateEventInSync(event: Event) = db.syncQueueDao().update(SyncQueueEntity(event.toEntity()))
-    override fun getEventsInSync() = db.syncQueueDao().getEvents().map { it.map { SyncEvent(it.id, it.event.toObject()) } }
-    override suspend fun deleteFromSync(ids: List<Long>)  = db.syncQueueDao().deleteByIds(ids)
 
     override suspend fun getArtist(id: Long) = db.trackDao().getArtist(id).toObject()
     override suspend fun getArtists(ids: List<Long>) = db.trackDao().getArtists(ids).map { it.toObject() }
@@ -230,11 +185,5 @@ class RoomRepository(private val db: AppDatabase) : Repository {
     override fun getTrackRank(track: TrackWithAlbum, period: TimePeriod) = db.playDao().getTrackRank(track.id, period.start, period.end)
     override fun getTrackRankByPlayCount(track: TrackWithAlbum, period: TimePeriod) = db.playDao().getTrackRankByPlayCount(track.id, period.start, period.end)
 
-    override suspend fun addKey(hostname: String, port: Int, username: String, key: String) = db.apiKeyDao().insert(ApiKeyEntity(hostname, port, username, key))
-    override suspend fun deleteKey(hostname: String, port: Int, username: String) = db.apiKeyDao().delete(hostname, port, username)
-    override suspend fun getKey(hostname: String, port: Int, username: String) = db.apiKeyDao().getKey(hostname, port, username)
-
-    override fun getEventCount() = db.eventDao().getEventsCount()
-    override fun getUnsyncedEventCount() = db.syncQueueDao().getEventCount()
     override fun getPlayCount() = db.playDao().getPlayCount()
 }

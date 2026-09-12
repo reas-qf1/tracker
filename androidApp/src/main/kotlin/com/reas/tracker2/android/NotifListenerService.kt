@@ -1,7 +1,5 @@
 package com.reas.tracker2.android
 
-import android.app.PendingIntent
-import android.app.TaskStackBuilder
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -14,33 +12,16 @@ import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import androidx.core.app.ServiceCompat
 import androidx.core.content.getSystemService
-import com.reas.tracker2.MainActivity
 import com.reas.tracker2.R
-import com.reas.tracker2.database.Repository
-import com.reas.tracker2.network.TrackerInstanceClient
 import com.reas.tracker2.settings.Settings
 import com.reas.tracker2.settings.isScrobblingEnabled
-import com.reas.tracker2.shared.Event
-import com.reas.tracker2.shared.EventProcessor
-import com.reas.tracker2.shared.EventState
-import com.reas.tracker2.shared.Source
 import com.reas.tracker2.util.InMemoryLog
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.milliseconds
-
-private val MediaMetadata.title
-    get() = this.getString(MediaMetadata.METADATA_KEY_TITLE)
-private val MediaMetadata.artist
-    get() = this.getString(MediaMetadata.METADATA_KEY_ARTIST)
-private val MediaMetadata.album
-    get() = this.getString(MediaMetadata.METADATA_KEY_ALBUM)
-private val MediaMetadata.albumArtist
-    get() = this.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST)
-private val MediaMetadata.duration
-    get() = this.getLong(MediaMetadata.METADATA_KEY_DURATION)
 
 private object NotificationListenerService {
     val logger = KotlinLogging.logger {}
@@ -49,111 +30,12 @@ private object NotificationListenerService {
 private class MediaCallback(private val appId: String): MediaController.Callback(), KoinComponent {
     private val logger = com.reas.tracker2.android.NotificationListenerService.logger
     private val inMemoryLogger: InMemoryLog by inject()
-    private val repository: Repository by inject()
-    private val notificationManager: NotificationWrapper by inject()
-    private val syncManager: TrackerInstanceClient by inject()
-    private val eventProcessor: EventProcessor by inject()
+    private val mediaEventProcessor: MediaEventRelay by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var currentMetadata: MediaMetadata? = null
     private var currentState: PlaybackState? = null
-    private var lastEvent: Event? = null
-    private var lastPlaybackRate = 0f
-
-    // TODO: this doesn't work, rethink
-    private var sentEvent: Boolean = false
-
-    private fun updateNotification(event: Event) {
-        val notificationBuilder: NotificationBuilder = if (event.isPlaying) {
-            { context ->
-                setContentTitle(event.track)
-                setContentText(event.artistsAsString)
-                setSmallIcon(R.drawable.ic_stat_name)
-                setShowWhen(false)
-
-                val resultIntent = Intent(context, MainActivity::class.java)
-                val resultPendingIntent =
-                    TaskStackBuilder.create(context).run {
-                        addNextIntentWithParentStack(resultIntent)
-                        getPendingIntent(
-                            0,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                        )
-                    }
-                setContentIntent(resultPendingIntent)
-
-//                val deleteIntent = Intent(context, NotifListenerService::class.java)
-//                deleteIntent.putExtra("org.reas.tracker2.appId", appId)
-//                val deletePendingIntent = PendingIntent.getService(context, 42, deleteIntent,
-//                    PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE)
-//                setDeleteIntent(deletePendingIntent)
-            }
-        } else {
-            {
-                setContentTitle("Nothing is playing")
-                setSmallIcon(R.drawable.ic_stat_name)
-                setShowWhen(false)
-            }
-        }
-        notificationManager.show(
-            "Now Playing",
-            NotificationWrapper.PLAYING_ID,
-            notificationBuilder
-        )
-    }
-
-    private fun addEvent() {
-        if (currentMetadata == null || currentState == null)
-            return
-        val metadata = currentMetadata!!
-        val state = currentState!!
-        if (metadata.artist.isNullOrBlank() || metadata.title.isNullOrBlank() || state.state == PlaybackState.STATE_NONE)
-            return
-
-        if (sentEvent) return
-        sentEvent = true
-
-        val isPlaying = state.state == PlaybackState.STATE_PLAYING
-
-        val event = Event.create(
-            track = metadata.title!!,
-            artists = metadata.artist!!,
-            album = metadata.album,
-            albumArtists = metadata.albumArtist ?: metadata.artist,
-            duration = metadata.duration,
-            timestamp = state.lastPositionUpdateTime - SystemClock.elapsedRealtime() + System.currentTimeMillis(),
-            position = if (isPlaying && state.position < EventProcessor.SKIP_MIN_DURATION.inWholeMilliseconds) 0L else state.position,
-            state = if (isPlaying) EventState.PLAYING else EventState.STOPPED,
-            source = Source.local(appId)
-        )
-
-        // optimization to store less events
-        if (lastEvent == null && !event.isPlaying)
-            return
-        if (lastEvent != null) {
-            val l = lastEvent!!
-            if (!l.isPlaying && !event.isPlaying)
-                return
-            if (l.isPlaying && event.isPlaying
-                && l.metadata == event.metadata
-                && state.playbackSpeed == lastPlaybackRate
-                && ((event.timestamp - l.timestamp) * lastPlaybackRate.toDouble() - (event.position - l.position)).absoluteValue < 50.milliseconds) {
-                return
-            }
-        }
-        lastEvent = event
-        lastPlaybackRate = state.playbackSpeed
-
-        scope.launch {
-            val plays = eventProcessor.process(listOf(event))
-            plays.lastOrNull()?.let { lastPlay ->
-                val processedEvent = event.copy(metadata = lastPlay.metadata)
-                repository.insertEvent(processedEvent)
-                syncManager.submitEvent(processedEvent)
-                repository.insertPlays(plays)
-                updateNotification(processedEvent)
-            }
-        }
-    }
+    private var lastUpdateTime = 0L
+    private val isSending = AtomicBoolean(false)
 
     private fun log(message: () -> String) {
         logger.debug(message)
@@ -180,6 +62,7 @@ private class MediaCallback(private val appId: String): MediaController.Callback
 
         if (metadata == null) return
         currentMetadata = metadata
+        lastUpdateTime = System.currentTimeMillis()
         addEvent()
     }
 
@@ -213,7 +96,7 @@ private class MediaCallback(private val appId: String): MediaController.Callback
 
         if (state == null) return
         currentState = state
-        sentEvent = false
+        lastUpdateTime = state.lastPositionUpdateTime - SystemClock.elapsedRealtime() + System.currentTimeMillis()
         addEvent()
     }
 
@@ -226,14 +109,29 @@ private class MediaCallback(private val appId: String): MediaController.Callback
                 1.0f
             ).build()
         }
-        sentEvent = false
+        lastUpdateTime = System.currentTimeMillis()
         addEvent()
     }
 
-//    fun onNotificationDismissed() {
-//        notificationId = notificationManager.reserveId()
-//        showNotification()
-//    }
+    private fun addEvent() {
+        scope.launch {
+            // this here is an insane hack to deal with onMetadataChanged and onPlaybackStateChanged
+            // coming in at an arbitrary order when both were changed at the same time
+
+            // here isSending is set to true, and the first function to be called waits for a while
+            // so that the second function can get to this point too
+            if (isSending.compareAndSet(false, true)) {
+                delay(150.milliseconds) // delay time subject to change
+            }
+            // here one of the functions sets isSending to false, and the other returns prematurely
+            if (!isSending.compareAndSet(true, false)) {
+                return@launch
+            }
+            // by this point all current fields have been updated, and only one of the two methods
+            // reached here, so we can safely save the event
+            mediaEventProcessor.process(appId, lastUpdateTime, currentMetadata, currentState)
+        }
+    }
 }
 
 private class SessionListener: MediaSessionManager.OnActiveSessionsChangedListener, KoinComponent {
@@ -324,11 +222,6 @@ private class SessionListener: MediaSessionManager.OnActiveSessionsChangedListen
             controllers[appId] = controller
         }
     }
-
-//    fun onNotificationDismissed(appId: String) {
-//        Logger.d(TAG) { "onNotificationDismissed($appId)" }
-//        callbacks[appId]?.onNotificationDismissed()
-//    }
 }
 
 class NotifListenerService: NotificationListenerService(), KoinComponent {
@@ -340,8 +233,6 @@ class NotifListenerService: NotificationListenerService(), KoinComponent {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-//        if (startId == 42)
-//            listener!!.onNotificationDismissed(intent!!.getStringExtra("org.reas.tracker2.appId")!!)
         ServiceCompat.startForeground(
             this,
             NotificationWrapper.PLAYING_ID,

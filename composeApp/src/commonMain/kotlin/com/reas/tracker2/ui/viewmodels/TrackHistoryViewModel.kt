@@ -2,7 +2,10 @@ package com.reas.tracker2.ui.viewmodels
 
 import com.reas.tracker2.database.Repository
 import com.reas.tracker2.network.NetworkRepository
-import com.reas.tracker2.shared.*
+import com.reas.tracker2.shared.EventProcessor
+import com.reas.tracker2.shared.Play
+import com.reas.tracker2.shared.TimePeriod
+import com.reas.tracker2.shared.TrackWithAlbum
 import kotlinx.coroutines.flow.map
 
 class TrackHistoryViewModel(
@@ -29,25 +32,10 @@ class TrackHistoryViewModel(
     suspend fun delete(scrobble: Play) {
         eventProcessor.addTemporaryEdit(scrobble, null)
         repository.deletePlay(scrobble)
-        if (scrobble.isLocal) {
-            scrobble.associatedEvents.forEach { event ->
-                repository.deleteEvent(scrobble.source.app, event.timestamp)
-            }
-        }
     }
 
     suspend fun edit(scrobble: Play, newMetadata: TrackWithAlbum) {
         eventProcessor.addTemporaryEdit(scrobble, newMetadata)
         repository.updatePlay(scrobble.copy(metadata = newMetadata))
-        if (scrobble.isLocal) {
-            scrobble.associatedEvents.forEach { event ->
-                repository.updateEvent(Event(
-                    metadata = newMetadata,
-                    duration = scrobble.duration,
-                    source = scrobble.source,
-                    info = event
-                ))
-            }
-        }
     }
 }

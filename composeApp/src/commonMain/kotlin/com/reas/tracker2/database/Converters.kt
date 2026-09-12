@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
+import kotlin.uuid.Uuid
 
 
 class Converters {
@@ -39,4 +40,10 @@ class Converters {
 
     @ColumnTypeConverter
     fun stringToEventState(value: String): EventState = EventState.valueOf(value)
+
+    @ColumnTypeConverter
+    fun uuidToString(uuid: Uuid) = uuid.toHexDashString()
+
+    @ColumnTypeConverter
+    fun stringToUuid(string: String) = Uuid.parseHexDash(string)
 }

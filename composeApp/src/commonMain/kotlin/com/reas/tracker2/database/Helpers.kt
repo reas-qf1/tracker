@@ -7,6 +7,7 @@ import com.reas.tracker2.database.entities.*
 import com.reas.tracker2.shared.*
 import kotlin.time.Duration
 import kotlin.time.Instant
+import kotlin.uuid.Uuid
 
 data class AlbumWithData(
     @Embedded val album: AlbumEntity,
@@ -50,6 +51,7 @@ data class TrackWithData(
 }
 
 data class PlayWithData(
+    val id: Uuid,
     @Embedded val metadata: TrackWithData,
     val timestamp: Instant,
     val duration: Duration,

@@ -7,20 +7,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.reas.tracker2.ui.navigation.ApplicationState
 import com.reas.tracker2.ui.rememberAsState
 import com.reas.tracker2.ui.viewmodels.DebugScreenViewModel
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -29,28 +26,18 @@ fun DebugScreen(
     modifier: Modifier = Modifier,
     viewModel: DebugScreenViewModel = koinViewModel()
 ) {
-    val scope = rememberCoroutineScope()
-    val eventCount by rememberAsState { viewModel.eventCount }
-    val unsyncedEventCount by rememberAsState { viewModel.unsyncedEventCount }
     val playCount by rememberAsState { viewModel.playCount }
     val mediaEventLog by rememberAsState { viewModel.mediaEventLog }
 
     val verticalScrollState = rememberScrollState()
     LaunchedEffect(mediaEventLog) {
-        verticalScrollState.scrollTo(Int.MAX_VALUE)
+        if (!verticalScrollState.canScrollForward)
+            verticalScrollState.scrollTo(Int.MAX_VALUE)
     }
 
     applicationState.setTitle("Debug")
     Column(modifier = modifier) {
-        Text("Local events: $eventCount")
-        Text("Unsynced events: $unsyncedEventCount")
         Text("Total plays: $playCount")
-        Button(onClick = { scope.launch { viewModel.refreshApiKey() } }) {
-            Text("Refresh API key")
-        }
-        Button(onClick = { scope.launch { viewModel.flushAllEvents() } }) {
-            Text("Sync all events")
-        }
         Text("Event log:")
         Text(
             text = mediaEventLog,

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import com.reas.tracker2.android.DailyReportWorker
 import com.reas.tracker2.android.NotificationWrapper
-import com.reas.tracker2.android.SyncWorker
 import com.reas.tracker2.ui.TrackerApp
 import org.koin.android.ext.android.inject
 
@@ -22,7 +21,6 @@ class MainActivity : ComponentActivity() {
         notif.createChannels()
 
         DailyReportWorker.start(this)
-        SyncWorker.start(this)
 
         setContent {
             TrackerApp(

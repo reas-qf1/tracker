@@ -3,6 +3,7 @@ package com.reas.tracker2
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
+import com.reas.tracker2.android.MediaEventRelay
 import com.reas.tracker2.android.NotificationWrapper
 import com.reas.tracker2.database.getDatabaseBuilder
 import com.reas.tracker2.util.PlatformDependentPaths
@@ -20,4 +21,5 @@ val platformModule = module {
             get<Context>().getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         )
     }
+    singleOf(::MediaEventRelay)
 }

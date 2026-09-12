@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import com.reas.tracker2.buildConfig.IS_DEBUG
 import com.reas.tracker2.ui.dialogs.ErrorDialog
 import com.reas.tracker2.ui.dialogs.InfoBottomSheet
-import com.reas.tracker2.ui.dialogs.LoginDialog
 import com.reas.tracker2.ui.navigation.*
 import com.reas.tracker2.ui.screens.*
 import com.reas.tracker2.ui.theme.TrackerTheme
@@ -91,10 +90,6 @@ fun TrackerApp(
 
             dialog<BottomSheetInfo> { arguments ->
                 InfoBottomSheet(arguments, applicationState)
-            }
-
-            dialog<Login> {
-                LoginDialog(applicationState)
             }
 
             dialog<Error> { arguments ->

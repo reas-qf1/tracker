@@ -8,6 +8,4 @@ class EventProcessorAdapterImpl(
     private val repository: Repository
 ): EventProcessorAdapter {
     override suspend fun getLastPlayFromSource(source: Source) = repository.getLastPlayFromSource(source)
-
-    override suspend fun getNextId(user: String) = null
 }

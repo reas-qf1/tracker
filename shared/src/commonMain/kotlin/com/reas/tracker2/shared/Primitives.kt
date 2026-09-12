@@ -6,6 +6,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @Serializable
 data class ArtistList(
@@ -131,6 +133,7 @@ data class EventInfo(
     val timestamp: Instant,
     val position: Duration,
     val state: EventState,
+    val speed: Double,
 )
 
 @Serializable
@@ -166,8 +169,11 @@ data class Event(
         get() = info.state == EventState.PLAYING
     val state: EventState
         get() = info.state
+    val speed: Double
+        get() = info.speed
 
     companion object {
+        @OptIn(ExperimentalUuidApi::class)
         fun create(
             track: String,
             artists: String,
@@ -177,6 +183,7 @@ data class Event(
             timestamp: Long,
             position: Long,
             state: EventState,
+            speed: Double,
             source: Source
         ) = Event(
             metadata = TrackWithAlbum(
@@ -190,6 +197,7 @@ data class Event(
                 timestamp = Instant.fromEpochMilliseconds(timestamp),
                 position = position.milliseconds,
                 state = state,
+                speed = speed,
             ),
             source = source
         )
@@ -210,13 +218,13 @@ data class Source(
 
 @Serializable
 data class Play(
+    val id: Uuid,
     val metadata: TrackWithAlbum,
     val duration: Duration,
     val timestamp: Instant,
     var timePlayed: Duration,
     val source: Source,
-    val associatedEvents: MutableList<EventInfo>,
-    val id: Long? = null
+    val associatedEvents: MutableList<EventInfo>
 ) {
     val track: String
         get() = metadata.name
@@ -246,12 +254,14 @@ data class Play(
         get() = associatedEvents.last().position
     val lastPlaying
         get() = associatedEvents.last().state == EventState.PLAYING
+    val lastSpeed
+        get() = associatedEvents.last().speed
 
     val currentPosition
         get() = lastPosition + (timestamp - lastTimestamp)
     val endTimestamp
         get() = associatedEvents.last().let { lastEvent ->
-            lastEvent.timestamp + (duration - lastEvent.position)
+            lastEvent.timestamp + (duration - lastEvent.position) / lastEvent.speed
         }
 
     val isNowPlaying
@@ -270,40 +280,15 @@ data class Play(
         get() = "$client/$app/$timestamp"
 
     companion object {
-        fun fromEvent(event: Event, id: Long? = null): Play = Play(
+        @OptIn(ExperimentalUuidApi::class)
+        fun fromEvent(event: Event, id: Uuid? = null): Play = Play(
+            id = id ?: Uuid.generateV4(),
             metadata = event.metadata,
             duration = event.duration,
             timestamp = event.timestamp,
             timePlayed = Duration.ZERO,
             source = event.source,
             associatedEvents = mutableListOf(event.info),
-            id = id
-        )
-
-        fun create(
-            track: String,
-            artists: String,
-            album: String?,
-            albumArtists: String?,
-            duration: Long,
-            timestamp: Long,
-            timePlayed: Long,
-            source: Source,
-            associatedEvents: MutableList<EventInfo>,
-            id: Long? = null
-        ) = Play(
-            metadata = TrackWithAlbum(
-                track,
-                ArtistList(artists),
-                album,
-                ArtistList(albumArtists ?: artists)
-            ),
-            duration = duration.milliseconds,
-            timePlayed = timePlayed.milliseconds,
-            timestamp = Instant.fromEpochMilliseconds(timestamp),
-            source = source,
-            associatedEvents = associatedEvents,
-            id = id
         )
     }
 }
