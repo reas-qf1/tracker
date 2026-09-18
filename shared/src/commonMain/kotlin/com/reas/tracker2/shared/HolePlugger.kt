@@ -25,13 +25,8 @@ class HolePlugger(
             delay(delayTime)
             logger.debug { "plugging hole for $key" }
             plugJobs.remove(key) // so that no one can cancel us
-            play.timePlayed += play.duration - play.lastPosition
-            play.associatedEvents.add(EventInfo(
-                position = play.duration,
-                timestamp = play.endTimestamp,
-                speed = play.lastSpeed,
-                state = EventState.PLUGGED
-            ))
+            play.timePlayed += play.endTimestamp - play.timestamp
+            play.plug(play.endTimestamp, play.duration, play.lastSpeed)
             playFlow.emit(play)
         }
     }

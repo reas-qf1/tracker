@@ -6,7 +6,6 @@ import androidx.room3.PrimaryKey
 import com.reas.tracker2.shared.EventInfo
 import kotlin.time.Duration
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 @Entity(
     tableName = "plays",
@@ -17,7 +16,7 @@ import kotlin.uuid.Uuid
     ]
 )
 data class PlayEntity(
-    @PrimaryKey val id: Uuid,
+    @PrimaryKey(autoGenerate = true) val id: Long,
     val trackId: Long,
     val artists: String,
     val albumArtists: String?,

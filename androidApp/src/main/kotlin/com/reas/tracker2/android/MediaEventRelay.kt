@@ -1,17 +1,13 @@
 package com.reas.tracker2.android
 
-import android.app.PendingIntent
-import android.app.TaskStackBuilder
-import android.content.Intent
 import android.media.MediaMetadata
 import android.media.session.PlaybackState
-import com.reas.tracker2.MainActivity
-import com.reas.tracker2.R
 import com.reas.tracker2.database.Repository
 import com.reas.tracker2.shared.Event
 import com.reas.tracker2.shared.EventProcessor
 import com.reas.tracker2.shared.EventState
 import com.reas.tracker2.shared.Source
+import com.reas.tracker2.util.NowPlayingNotificationManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -21,7 +17,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class MediaEventRelay(
     private val repository: Repository,
     private val eventProcessor: EventProcessor,
-    private val notificationManager: NotificationWrapper,
+    private val notificationManager: NowPlayingNotificationManager,
 ) {
     private val GRACE_PERIOD = 50.milliseconds
 
@@ -85,41 +81,8 @@ class MediaEventRelay(
             plays.lastOrNull()?.let { lastPlay ->
                 val processedEvent = savedEvent.copy(metadata = lastPlay.metadata)
                 repository.insertPlays(plays)
-                updateNotification(processedEvent)
+                notificationManager.show(processedEvent)
             }
         }
-    }
-
-    private fun updateNotification(event: Event) {
-        val notificationBuilder: NotificationBuilder = if (event.isPlaying) {
-            { context ->
-                setContentTitle(event.track)
-                setContentText(event.artistsAsString)
-                setSmallIcon(R.drawable.ic_stat_name)
-                setShowWhen(false)
-
-                val resultIntent = Intent(context, MainActivity::class.java)
-                val resultPendingIntent =
-                    TaskStackBuilder.create(context).run {
-                        addNextIntentWithParentStack(resultIntent)
-                        getPendingIntent(
-                            0,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                        )
-                    }
-                setContentIntent(resultPendingIntent)
-            }
-        } else {
-            {
-                setContentTitle("Nothing is playing")
-                setSmallIcon(R.drawable.ic_stat_name)
-                setShowWhen(false)
-            }
-        }
-        notificationManager.show(
-            "Now Playing",
-            NotificationWrapper.PLAYING_ID,
-            notificationBuilder
-        )
     }
 }

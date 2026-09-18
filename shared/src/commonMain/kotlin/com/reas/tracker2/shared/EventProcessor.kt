@@ -14,40 +14,74 @@ class EventProcessor(
     // TODO: these should probably be a preference in order to persist between restarts
     private val temporaryEdits = hashMapOf<Source, Pair<Play, TrackWithAlbum?>>()
 
-    suspend fun addTemporaryEdit(play: Play, newMetadata: TrackWithAlbum?) {
-        val lastPlay = adapter.getLastPlayFromSource(play.source)
-        if (lastPlay != null && lastPlay.timestamp == play.timestamp) {
+    suspend fun getLastPlay(source: Source): Play? {
+        val dbPlay = revertTemporaryEdit(adapter.getLastPlayFromSource(source))
+        val deletedPlay = temporaryEdits[source]?.first
+
+        return if (dbPlay != null && deletedPlay != null) {
+            if (dbPlay.timestamp > deletedPlay.timestamp) dbPlay else deletedPlay
+        } else {
+            dbPlay ?: deletedPlay
+        }
+    }
+
+    suspend fun addTemporaryEdit(play: Play, newMetadata: TrackWithAlbum?): Boolean {
+        val source = play.source
+        val lastPlay = getLastPlay(source)
+        val isLastPlay = lastPlay != null && lastPlay.timestamp == play.timestamp
+        if (isLastPlay) {
             logger.debug { "addTemporaryEdit $play $newMetadata" }
-            val originalPlay = temporaryEdits[play.source]?.first ?: play
-            temporaryEdits[play.source] = originalPlay to newMetadata
+            val originalPlay = temporaryEdits[source]?.first ?: play
+            temporaryEdits[source] = originalPlay to newMetadata
+        }
+        return isLastPlay
+    }
+
+    private fun revertTemporaryEdit(play: Play?): Play? {
+        if (play == null) return null
+        var newPlay = play
+        temporaryEdits[play.source]?.let {
+            newPlay = play.copy(metadata = it.first.metadata)
+        }
+        return newPlay
+    }
+
+    private fun MutableList<Play>.applyTemporaryEditAndAdd(play: Play) {
+        val temporaryEdit = temporaryEdits[play.source]
+        if (temporaryEdit != null) {
+            if (temporaryEdit.second != null)
+                this.add(play.copy(metadata = temporaryEdit.second!!))
+        } else {
+            this.add(play)
+        }
+    }
+
+    private fun clearTemporaryEdit(play: Play) {
+        val temporaryEdit = temporaryEdits[play.source]
+        if (temporaryEdit != null && temporaryEdit.first.timestamp == play.timestamp) {
+            temporaryEdits.remove(play.source)
         }
     }
 
     suspend fun process(snapshot: List<Event>): List<Play> {
-        if (snapshot.isEmpty()) return listOf()
-
         logger.debug { "processing ${snapshot.size} events" }
         val resultPlays = mutableListOf<Play>()
 
         snapshot.groupBy { it.source }.forEach { (source, events) ->
-            resultPlays.addAll(processSingleSource(source, events))
+            processSingleSource(resultPlays, source, events)
         }
         return resultPlays
     }
 
-    private suspend fun processSingleSource(source: Source, events: List<Event>): List<Play> {
-        val resultPlays = mutableListOf<Play>()
-        var temporaryEdit = temporaryEdits[source]
-        var processingDeleted = temporaryEdit != null && temporaryEdit.second == null
-
-        var play = if (processingDeleted) temporaryEdit!!.first else adapter.getLastPlayFromSource(source)
+    private suspend fun processSingleSource(resultPlays: MutableList<Play>, source: Source, events: List<Event>) {
+        var play = getLastPlay(source)
         val eventsSorted = events.sortedBy { it.timestamp }
         if (play != null && eventsSorted[0].timestamp < play.timestamp) {
             logger.error {
                 "ERROR: out-of-sync events source=$source " +
                         "eventTimestamp=${eventsSorted[0].timestamp} playTimestamp=${play!!.timestamp}"
             }
-            return emptyList()
+            return
         }
 
         eventsSorted.forEach { event ->
@@ -59,57 +93,33 @@ class EventProcessor(
                 return@forEach
             }
 
-            // check if need to plug hole
+            // if past the end of previous play, plug hole
             val shouldPlugHole = event.timestamp > play.endTimestamp
             if (play.lastPlaying && shouldPlugHole) {
-                play.timePlayed += play.duration - play.lastPosition
-                play.associatedEvents.add(EventInfo(
-                    position = play.duration,
-                    timestamp = play.endTimestamp,
-                    speed = play.lastSpeed,
-                    state = EventState.PLUGGED
-                ))
+                play.timePlayed += play.endTimestamp - play.timestamp
+                play.plug(play.endTimestamp, play.duration, play.lastSpeed)
             }
-            if (play.associatedEvents.last().state == EventState.PLUGGED && !shouldPlugHole) {
+
+            // if hole is plugged and needs to be unplugged, unplug
+            if (play.isPlugged && !shouldPlugHole) {
                 play.associatedEvents.removeAt(play.associatedEvents.size - 1)
-                play.timePlayed -= play.duration - play.lastPosition
+                play.timePlayed -= play.endTimestamp - play.timestamp
             }
+
+            // add time passed
             if (play.lastPlaying && !shouldPlugHole) {
                 play.timePlayed += event.timestamp - play.lastTimestamp
             }
 
-            val eventMetadata = temporaryEdit?.second ?: event.metadata
-            val isNewPlay = if (event.isPlaying) {
-                if (event.position <= SKIP_MIN_DURATION) {
-                    eventMetadata != play.metadata ||
-                            play.lastPosition > SKIP_MIN_DURATION ||
-                            (event.timestamp - play.lastTimestamp) > SKIP_MIN_DURATION
-                } else {
-                    eventMetadata != play.metadata
-                }
-            } else {
-                event.position <= SKIP_MIN_DURATION && play.lastPosition > SKIP_MIN_DURATION
-            }
-
+            val isNewPlay = isNewPlay(event, play)
             logger.debug { "$event $play decided $isNewPlay" }
+
             if (isNewPlay) {
                 if (play.lastPlaying) {
-                    val eventInfo = EventInfo(
-                        timestamp = event.timestamp,
-                        position = play.lastPosition + (event.timestamp - play.lastTimestamp),
-                        speed = play.lastSpeed,
-                        state = EventState.PLUGGED
-                    )
-                    logger.debug { "plugging $eventInfo" }
-                    play.associatedEvents.add(eventInfo)
+                    play.plug(event.timestamp, event.position, play.lastSpeed)
                 }
-                if (!processingDeleted)
-                    resultPlays.add(play)
-                temporaryEdit?.let {
-                    temporaryEdits.remove(source)
-                    temporaryEdit = null
-                    processingDeleted = false
-                }
+                resultPlays.applyTemporaryEditAndAdd(play)
+                clearTemporaryEdit(play)
                 play = Play.fromEvent(event)
             } else {
                 play.associatedEvents.add(event.info)
@@ -117,8 +127,21 @@ class EventProcessor(
             logger.debug { "finished processing $event" }
         }
 
-        if (play != null && !processingDeleted)
-            resultPlays.add(play)
-        return resultPlays
+        if (play != null)
+            resultPlays.applyTemporaryEditAndAdd(play)
+    }
+
+    private fun isNewPlay(event: Event, lastPlay: Play): Boolean {
+        return if (event.isPlaying) {
+            if (event.position <= SKIP_MIN_DURATION) {
+                event.metadata != lastPlay.metadata ||
+                        lastPlay.lastPosition > SKIP_MIN_DURATION ||
+                        (event.timestamp - lastPlay.lastTimestamp) > SKIP_MIN_DURATION
+            } else {
+                event.metadata != lastPlay.metadata
+            }
+        } else {
+            event.position <= SKIP_MIN_DURATION && lastPlay.lastPosition > SKIP_MIN_DURATION
+        }
     }
 }

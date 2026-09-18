@@ -2,12 +2,11 @@ package com.reas.tracker2.shared
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @Serializable
 data class ArtistList(
@@ -134,7 +133,10 @@ data class EventInfo(
     val position: Duration,
     val state: EventState,
     val speed: Double,
-)
+) {
+    val isPlaying: Boolean
+        get() = state == EventState.PLAYING
+}
 
 @Serializable
 data class Event(
@@ -173,7 +175,6 @@ data class Event(
         get() = info.speed
 
     companion object {
-        @OptIn(ExperimentalUuidApi::class)
         fun create(
             track: String,
             artists: String,
@@ -218,7 +219,7 @@ data class Source(
 
 @Serializable
 data class Play(
-    val id: Uuid,
+    val id: Long,
     val metadata: TrackWithAlbum,
     val duration: Duration,
     val timestamp: Instant,
@@ -247,20 +248,24 @@ data class Play(
         get() = source.client
     val app: String
         get() = source.app
-    
+
+    val lastEvent: EventInfo
+        get() = associatedEvents.last()
     val lastTimestamp
-        get() = associatedEvents.last().timestamp
+        get() = lastEvent.timestamp
     val lastPosition
-        get() = associatedEvents.last().position
+        get() = lastEvent.position
     val lastPlaying
-        get() = associatedEvents.last().state == EventState.PLAYING
+        get() = lastEvent.state == EventState.PLAYING
+    val isPlugged
+        get() = lastEvent.state == EventState.PLUGGED
     val lastSpeed
-        get() = associatedEvents.last().speed
+        get() = lastEvent.speed
 
     val currentPosition
         get() = lastPosition + (timestamp - lastTimestamp)
     val endTimestamp
-        get() = associatedEvents.last().let { lastEvent ->
+        get() = lastEvent.let { lastEvent ->
             lastEvent.timestamp + (duration - lastEvent.position) / lastEvent.speed
         }
 
@@ -279,10 +284,18 @@ data class Play(
     val key
         get() = "$client/$app/$timestamp"
 
+    fun plug(timestamp: Instant, position: Duration, speed: Double) {
+        associatedEvents.add(EventInfo(
+            timestamp = timestamp,
+            position = position,
+            speed = speed,
+            state = EventState.PLUGGED,
+        ))
+    }
+
     companion object {
-        @OptIn(ExperimentalUuidApi::class)
-        fun fromEvent(event: Event, id: Uuid? = null): Play = Play(
-            id = id ?: Uuid.generateV4(),
+        fun fromEvent(event: Event): Play = Play(
+            id = Random.nextLong(),
             metadata = event.metadata,
             duration = event.duration,
             timestamp = event.timestamp,

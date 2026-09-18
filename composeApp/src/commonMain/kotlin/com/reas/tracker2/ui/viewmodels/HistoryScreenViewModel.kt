@@ -8,6 +8,7 @@ import com.reas.tracker2.shared.EventProcessor
 import com.reas.tracker2.shared.Play
 import com.reas.tracker2.shared.TrackWithAlbum
 import com.reas.tracker2.ui.components.printShort
+import com.reas.tracker2.util.NowPlayingNotificationManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -25,6 +26,7 @@ class HistoryScreenViewModel(
     private val repository: Repository,
     private val networkRepository: NetworkRepository,
     private val eventProcessor: EventProcessor,
+    private val nowPlayingNotificationManager: NowPlayingNotificationManager,
 ): TrackerViewModel() {
     val history: Flow<PagingData<HistoryEntry>>
         get() = pagingDataFlow { repository.getRecentPlays() }
@@ -43,20 +45,25 @@ class HistoryScreenViewModel(
                 }
             } }
 
-    suspend fun getImageUrl(scrobble: Play): String? {
-        scrobble.asAlbum?.let { album ->
+    suspend fun getImageUrl(play: Play): String? {
+        play.asAlbum?.let { album ->
             return networkRepository.getAlbumImageUrl(album, "large")
         }
         return null
     }
 
-    suspend fun delete(scrobble: Play) {
-        eventProcessor.addTemporaryEdit(scrobble, null)
-        repository.deletePlay(scrobble)
+    suspend fun delete(play: Play) {
+        if (eventProcessor.addTemporaryEdit(play, null)) {
+            nowPlayingNotificationManager.showDefault()
+        }
+        repository.deletePlay(play)
     }
 
-    suspend fun edit(scrobble: Play, newMetadata: TrackWithAlbum) {
-        eventProcessor.addTemporaryEdit(scrobble, newMetadata)
-        repository.updatePlay(scrobble.copy(metadata = newMetadata))
+    suspend fun edit(play: Play, newMetadata: TrackWithAlbum) {
+        val newScrobble = play.copy(metadata = newMetadata)
+        if (eventProcessor.addTemporaryEdit(play, newMetadata)) {
+            nowPlayingNotificationManager.show(newScrobble)
+        }
+        repository.updatePlay(newScrobble)
     }
 }
