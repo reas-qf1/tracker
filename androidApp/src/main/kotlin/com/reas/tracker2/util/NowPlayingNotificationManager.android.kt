@@ -12,7 +12,9 @@ import com.reas.tracker2.shared.EventInfo
 import com.reas.tracker2.shared.Play
 import com.reas.tracker2.shared.TrackWithAlbum
 
-class NowPlayingNotificationManagerAndroid(private val notificationManager: NotificationWrapper) : NowPlayingNotificationManager {
+class NowPlayingNotificationManagerAndroid(
+    private val notificationManager: NotificationWrapper,
+) : NowPlayingNotificationManager {
     override fun show(event: Event) {
         updateNotification(notificationBuilder(event.metadata, event.info))
     }
@@ -25,24 +27,31 @@ class NowPlayingNotificationManagerAndroid(private val notificationManager: Noti
         updateNotification(defaultNotificationBuilder)
     }
 
-    private fun notificationBuilder(metadata: TrackWithAlbum, event: EventInfo): NotificationBuilder =
-        if (event.isPlaying) { context ->
-            setContentTitle(metadata.name)
-            setContentText(metadata.artistsAsString)
-            setSmallIcon(R.drawable.ic_stat_name)
-            setShowWhen(false)
+    private fun notificationBuilder(
+        metadata: TrackWithAlbum,
+        event: EventInfo,
+    ): NotificationBuilder =
+        if (event.isPlaying) {
+            { context ->
+                setContentTitle(metadata.name)
+                setContentText(metadata.artistsAsString)
+                setSmallIcon(R.drawable.ic_stat_name)
+                setShowWhen(false)
 
-            val resultIntent = Intent(context, MainActivity::class.java)
-            val resultPendingIntent =
-                TaskStackBuilder.create(context).run {
-                    addNextIntentWithParentStack(resultIntent)
-                    getPendingIntent(
-                        0,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                }
-            setContentIntent(resultPendingIntent)
-        } else defaultNotificationBuilder
+                val resultIntent = Intent(context, MainActivity::class.java)
+                val resultPendingIntent =
+                    TaskStackBuilder.create(context).run {
+                        addNextIntentWithParentStack(resultIntent)
+                        getPendingIntent(
+                            0,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                        )
+                    }
+                setContentIntent(resultPendingIntent)
+            }
+        } else {
+            defaultNotificationBuilder
+        }
 
     private val defaultNotificationBuilder: NotificationBuilder = {
         setContentTitle("Nothing is playing")

@@ -17,18 +17,14 @@ import org.jetbrains.compose.resources.stringResource
 import tracker2.composeapp.generated.resources.Res
 import tracker2.composeapp.generated.resources.more
 
-
 @Composable
-fun RowScope.InfoBox(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
+fun RowScope.InfoBox(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Box(
         modifier = modifier
             .weight(1.0F)
             .border(1.dp, Color.Gray, MaterialTheme.shapes.medium)
             .aspectRatio(1.0F),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             content()
@@ -36,21 +32,16 @@ fun RowScope.InfoBox(
     }
 }
 
-
 @Composable
-fun InfoChartHeader(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun InfoChartHeader(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
+        modifier = modifier,
     ) {
         Text(
             text,
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(start = 10.dp)
+            modifier = Modifier.padding(start = 10.dp),
         )
         Spacer(Modifier.weight(1.0F))
         AssistChip(
@@ -59,9 +50,9 @@ fun InfoChartHeader(
             leadingIcon = {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowRight,
-                    stringResource(Res.string.more)
+                    stringResource(Res.string.more),
                 )
-            }
+            },
         )
     }
 }

@@ -35,7 +35,7 @@ fun TrackHistoryScreen(
     arguments: TrackHistory,
     applicationState: ApplicationState,
     modifier: Modifier = Modifier,
-    viewModel: TrackHistoryViewModel = koinViewModel()
+    viewModel: TrackHistoryViewModel = koinViewModel(),
 ) {
     val track = arguments.track
     applicationState.setTitle("${track.artistsAsString} - ${track.name}")
@@ -51,13 +51,13 @@ fun TrackHistoryScreen(
             Text(
                 "Plays: $trackPlays",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 10.dp, bottom = 10.dp)
+                modifier = Modifier.padding(start = 10.dp, bottom = 10.dp),
             )
         }
 
         items(
             history.itemCount,
-            key = history.itemKey { scrobble -> scrobble.key }
+            key = history.itemKey { scrobble -> scrobble.key },
         ) { index ->
             val scrobble = history[index]
             scrobble?.let {
@@ -69,7 +69,7 @@ fun TrackHistoryScreen(
                         applicationState.navigate(BottomSheetInfo(track = scrobble.metadata))
                     },
                     onDelete = { deletingScrobble = scrobble },
-                    onEdit = { editingScrobble = scrobble }
+                    onEdit = { editingScrobble = scrobble },
                 )
             }
         }
@@ -82,7 +82,7 @@ fun TrackHistoryScreen(
                     viewModel.delete(scrobble)
                 }
             },
-            onDismiss = { deletingScrobble = null }
+            onDismiss = { deletingScrobble = null },
         ) {
             Icon(Icons.Filled.Warning, "Warning", modifier = Modifier.size(120.dp))
             Text("Are you sure you want to delete this scrobble?")
@@ -97,7 +97,7 @@ fun TrackHistoryScreen(
                     viewModel.edit(scrobble, track)
                 }
             },
-            onDismiss = { editingScrobble = null }
+            onDismiss = { editingScrobble = null },
         )
     }
 }

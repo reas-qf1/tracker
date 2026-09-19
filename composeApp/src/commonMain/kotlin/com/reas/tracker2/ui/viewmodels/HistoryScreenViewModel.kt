@@ -14,10 +14,16 @@ import kotlinx.coroutines.flow.map
 
 sealed class HistoryEntry {
     abstract fun key(): String
-    data class Play(val play: com.reas.tracker2.shared.Play): HistoryEntry() {
+
+    data class Play(
+        val play: com.reas.tracker2.shared.Play,
+    ) : HistoryEntry() {
         override fun key(): String = play.key
     }
-    data class Separator(val text: String): HistoryEntry() {
+
+    data class Separator(
+        val text: String,
+    ) : HistoryEntry() {
         override fun key(): String = text
     }
 }
@@ -27,23 +33,25 @@ class HistoryScreenViewModel(
     private val networkRepository: NetworkRepository,
     private val eventProcessor: EventProcessor,
     private val nowPlayingNotificationManager: NowPlayingNotificationManager,
-): TrackerViewModel() {
+) : TrackerViewModel() {
     val history: Flow<PagingData<HistoryEntry>>
-        get() = pagingDataFlow { repository.getRecentPlays() }
-            .mapElements { entity ->
-                HistoryEntry.Play(repository.playEntityToObject(entity))
-            }
-            .map { it.insertSeparators { before, after ->
-                if (before == null) return@insertSeparators null
-                if (after == null) return@insertSeparators null
-                val beforeDate = before.play.timestamp.printShort()
-                val afterDate = after.play.timestamp.printShort()
-                if (beforeDate != afterDate) {
-                    HistoryEntry.Separator(afterDate)
-                } else {
-                    null
+        get() =
+            pagingDataFlow { repository.getRecentPlays() }
+                .mapElements { entity ->
+                    HistoryEntry.Play(repository.playEntityToObject(entity))
+                }.map {
+                    it.insertSeparators { before, after ->
+                        if (before == null) return@insertSeparators null
+                        if (after == null) return@insertSeparators null
+                        val beforeDate = before.play.timestamp.printShort()
+                        val afterDate = after.play.timestamp.printShort()
+                        if (beforeDate != afterDate) {
+                            HistoryEntry.Separator(afterDate)
+                        } else {
+                            null
+                        }
+                    }
                 }
-            } }
 
     suspend fun getImageUrl(play: Play): String? {
         play.asAlbum?.let { album ->

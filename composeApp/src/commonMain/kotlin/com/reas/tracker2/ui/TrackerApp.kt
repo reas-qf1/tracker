@@ -17,14 +17,12 @@ import org.jetbrains.compose.resources.vectorResource
 import tracker2.composeapp.generated.resources.*
 
 @Composable
-fun TrackerApp(
-    modifier: Modifier = Modifier,
-) {
+fun TrackerApp(modifier: Modifier = Modifier) {
     val backStack = rememberBackStack(startRoute = History)
     val applicationState = rememberApplicationState(backStack)
 
     TrackerBackgroundProcesses(
-        onError = { message -> applicationState.navigate(Error(message)) }
+        onError = { message -> applicationState.navigate(Error(message)) },
     )
     TrackerTheme {
         TrackerNavScaffold(
@@ -33,28 +31,30 @@ fun TrackerApp(
                 TrackerNavItem(
                     title = stringResource(Res.string.history),
                     icon = Icons.Filled.History,
-                    destination = History
+                    destination = History,
                 ),
                 TrackerNavItem(
                     title = stringResource(Res.string.charts),
                     icon = Icons.Filled.Album,
-                    destination = Charts()
+                    destination = Charts(),
                 ),
                 TrackerNavItem(
                     title = stringResource(Res.string.settings),
                     icon = Icons.Filled.Settings,
-                    destination = Settings
-                )
+                    destination = Settings,
+                ),
             ).let {
                 if (IS_DEBUG) {
                     it + TrackerNavItem(
                         title = "Debug",
                         icon = vectorResource(Res.drawable.wrench),
-                        destination = Debug
+                        destination = Debug,
                     )
-                } else it
+                } else {
+                    it
+                }
             },
-            modifier = modifier
+            modifier = modifier,
         ) {
             entry<History> {
                 HistoryScreen(applicationState)

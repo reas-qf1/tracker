@@ -5,6 +5,8 @@ import com.skydoves.landscapist.core.NetworkConfig
 import com.skydoves.landscapist.core.network.KtorImageFetcher
 import io.ktor.client.*
 
-fun landscapistInstance(ktorClient: HttpClient) = Landscapist.builder()
-    .fetcher(KtorImageFetcher(ktorClient, NetworkConfig()))
-    .build()
+fun landscapistInstance(ktorClient: HttpClient) =
+    Landscapist
+        .builder()
+        .fetcher(KtorImageFetcher(ktorClient, NetworkConfig()))
+        .build()

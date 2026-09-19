@@ -33,7 +33,7 @@ fun TrackInfoScreen(
     arguments: TrackInfo,
     applicationState: ApplicationState,
     modifier: Modifier = Modifier,
-    viewModel: TrackInfoScreenViewModel = koinViewModel()
+    viewModel: TrackInfoScreenViewModel = koinViewModel(),
 ) {
     val track = arguments.track
     val sort by viewModel.sort().collectAsStateWithLifecycle()
@@ -50,7 +50,7 @@ fun TrackInfoScreen(
     applicationState.setTitle("${track.artistsAsString} - ${track.name}")
     Column(
         modifier = modifier.padding(top = 5.dp, start = 5.dp, end = 5.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         SortOrderSelectionChip(sort, { scope.launch { viewModel.setSort(it) } })
         Column(
@@ -60,25 +60,25 @@ fun TrackInfoScreen(
             ListEntryWithImage(
                 url = { viewModel.getTrackImageUrl(track) },
                 modifier = Modifier.height(125.dp),
-                alignment = Alignment.CenterVertically
+                alignment = Alignment.CenterVertically,
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1.0F)
+                    modifier = Modifier.weight(1.0F),
                 ) {
                     AutosizingText(track.name, style = MaterialTheme.typography.displaySmall)
                     track.artists.forEach { artist ->
                         AutosizingText(
                             artist.name,
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.secondary,
                         )
                     }
                     track.album?.let {
                         AutosizingText(
                             track.album!!,
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.secondary,
                         )
                     }
                 }
@@ -86,7 +86,7 @@ fun TrackInfoScreen(
             Spacer(Modifier.height(5.dp))
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 InfoBox {
                     AutosizingText(playsAsString, style = MaterialTheme.typography.headlineSmall)
@@ -95,7 +95,7 @@ fun TrackInfoScreen(
                 InfoBox {
                     AutosizingText(
                         timePlayedAsString,
-                        style = MaterialTheme.typography.headlineSmall
+                        style = MaterialTheme.typography.headlineSmall,
                     )
                     Text(stringResource(Res.string.time_played).lowercase(), color = MaterialTheme.colorScheme.secondary)
                 }
@@ -105,14 +105,14 @@ fun TrackInfoScreen(
                         Text(
                             stringResource(Res.string.in_charts_by_time),
                             color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     } else {
                         AutosizingText(playRank, style = MaterialTheme.typography.headlineSmall)
                         Text(
                             stringResource(Res.string.in_charts_by_plays),
                             color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }

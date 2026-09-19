@@ -6,7 +6,7 @@ import kotlin.time.Instant
 @Serializable
 data class V1LoginInfo(
     val username: String,
-    val password: String
+    val password: String,
 )
 
 @Serializable

@@ -8,21 +8,25 @@ import com.reas.tracker2.shared.ArtistList
 interface TrackDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTrack(track: TrackEntity): Long
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTracks(track: List<TrackEntity>): List<Long>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAlbum(album: AlbumEntity): Long
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAlbums(album: List<AlbumEntity>): List<Long>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertArtist(artist: ArtistEntity): Long
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertArtists(artist: List<ArtistEntity>): List<Long>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAlbumArtistCrossRefs(x: List<AlbumArtistCrossRef>)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTrackArtistCrossRefs(x: List<TrackArtistCrossRef>)
 
@@ -37,6 +41,7 @@ interface TrackDao {
 
     @Query("SELECT * FROM artists WHERE artistId = :id")
     suspend fun getArtist(id: Long): ArtistEntity
+
     @Query("SELECT * FROM artists WHERE artistId in (:ids)")
     suspend fun getArtists(ids: List<Long>): List<ArtistEntity>
 
@@ -62,23 +67,36 @@ interface TrackDao {
     suspend fun getOrInsertAlbum(name: String, artists: ArtistList): Long {
         val artistIds = getOrInsertArtists(artists.map { it.name })
         return getAlbumId(name, artistIds) ?: run {
-            val albumId = insertAlbum(AlbumEntity(name = name, artistIds = artistIds, artists = artists.raw))
-            insertAlbumArtistCrossRefs(artistIds.map { artistId ->
-                AlbumArtistCrossRef(albumId, artistId)
-            })
+            val albumId = insertAlbum(
+                AlbumEntity(name = name, artistIds = artistIds, artists = artists.raw),
+            )
+            insertAlbumArtistCrossRefs(
+                artistIds.map { artistId ->
+                    AlbumArtistCrossRef(albumId, artistId)
+                },
+            )
             albumId
         }
     }
 
     @Transaction
-    suspend fun getOrInsertTrack(name: String, artists: ArtistList, album: String?, albumArtists: ArtistList?): Long {
+    suspend fun getOrInsertTrack(
+        name: String,
+        artists: ArtistList,
+        album: String?,
+        albumArtists: ArtistList?,
+    ): Long {
         val artistIds = getOrInsertArtists(artists.map { it.name })
         val albumId = album?.let { getOrInsertAlbum(album, albumArtists!!) }
         return getTrackId(name, artistIds, albumId) ?: run {
-            val trackId = insertTrack(TrackEntity(name = name, albumId = albumId, artistIds = artistIds, artists = artists.raw))
-            insertTrackArtistCrossRefs(artistIds.map { artistId ->
-                TrackArtistCrossRef(trackId, artistId)
-            })
+            val trackId = insertTrack(
+                TrackEntity(name = name, albumId = albumId, artistIds = artistIds, artists = artists.raw),
+            )
+            insertTrackArtistCrossRefs(
+                artistIds.map { artistId ->
+                    TrackArtistCrossRef(trackId, artistId)
+                },
+            )
             trackId
         }
     }

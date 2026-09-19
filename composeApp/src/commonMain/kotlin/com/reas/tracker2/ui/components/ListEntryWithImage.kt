@@ -56,24 +56,26 @@ fun ListEntryWithImage(
 
     var palette by rememberPaletteState(null)
     val color by animateColorAsState(
-        if (palette == null || !dynamicColor)
+        if (palette == null || !dynamicColor) {
             backgroundColor
-        else {
+        } else {
             val background = backgroundColor.toColormathColor()
-            val cover = Color(palette!!.getColorForTarget(
-                 if (isLightTheme()) Target.LIGHT_VIBRANT else Target.DARK_MUTED,
-                backgroundColor.toArgb()
-            )).toColormathColor()
+            val cover = Color(
+                palette!!.getColorForTarget(
+                    if (isLightTheme()) Target.LIGHT_VIBRANT else Target.DARK_MUTED,
+                    backgroundColor.toArgb(),
+                ),
+            ).toColormathColor()
             val mixed = background.toHSL().interpolate(cover.toHSL(), DYNAMIC_COLOR_STRENGTH)
             mixed.toComposeColor()
-        }
+        },
     )
 
     Row(
         modifier = modifier
             .background(color, RoundedCornerShape(5.dp))
             .padding(5.dp),
-        verticalAlignment = alignment
+        verticalAlignment = alignment,
     ) {
         LandscapistImage(
             imageModel = { model },
@@ -86,7 +88,7 @@ fun ListEntryWithImage(
                 .fillMaxHeight()
                 .aspectRatio(1.0F)
                 .clip(shape = RoundedCornerShape(5.dp))
-                .background(color = Color.Gray)
+                .background(color = Color.Gray),
         )
         Spacer(Modifier.width(10.dp))
         content()

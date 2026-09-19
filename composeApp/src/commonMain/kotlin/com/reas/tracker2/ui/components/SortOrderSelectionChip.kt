@@ -12,24 +12,22 @@ import com.reas.tracker2.ui.navigation.ChartSort
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun SortOrderSelectionChip(
-    value: ChartSort,
-    setValue: (ChartSort) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun SortOrderSelectionChip(value: ChartSort, setValue: (ChartSort) -> Unit, modifier: Modifier = Modifier) {
     Box(modifier) {
         AssistChip(
-            onClick = { setValue(
-                if (value == ChartSort.TIME) ChartSort.PLAYS else ChartSort.TIME
-            ) },
+            onClick = {
+                setValue(
+                    if (value == ChartSort.TIME) ChartSort.PLAYS else ChartSort.TIME,
+                )
+            },
             label = { Text(stringResource(value.label)) },
             leadingIcon = {
                 Icon(
                     value.icon,
                     contentDescription = stringResource(value.label),
-                    Modifier.size(AssistChipDefaults.IconSize)
+                    Modifier.size(AssistChipDefaults.IconSize),
                 )
-            }
+            },
         )
     }
 }

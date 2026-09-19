@@ -25,7 +25,7 @@ fun ConfirmRow(
                 onDismiss()
             },
             enabled = enabled,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         ) {
             Text("OK")
         }
@@ -35,8 +35,8 @@ fun ConfirmRow(
             modifier = Modifier.weight(1f),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ),
         ) {
             Text("Cancel")
         }

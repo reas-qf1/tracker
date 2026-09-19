@@ -5,16 +5,16 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class LastFMAlbumInfoWrapper(
-    val album: LastFMAlbumInfo
+    val album: LastFMAlbumInfo,
 )
 
 @Serializable
 data class LastFMAlbumInfo(
-    val image: List<LastFMImageInfo>
+    val image: List<LastFMImageInfo>,
 )
 
 @Serializable
 data class LastFMImageInfo(
     val size: String,
-    @SerialName("#text") val url: String
+    @SerialName("#text") val url: String,
 )

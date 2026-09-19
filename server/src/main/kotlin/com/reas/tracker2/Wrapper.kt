@@ -4,10 +4,18 @@ import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-open class StatusCodeException(val status: HttpStatusCode, message: String? = null) : Exception(message)
+open class StatusCodeException(
+    val status: HttpStatusCode,
+    message: String? = null,
+) : Exception(message)
 
-open class Conflict(message: String? = null) : StatusCodeException(HttpStatusCode.Conflict, message)
-open class Unauthorized(message: String? = null) : StatusCodeException(HttpStatusCode.Unauthorized, message)
+open class Conflict(
+    message: String? = null,
+) : StatusCodeException(HttpStatusCode.Conflict, message)
+
+open class Unauthorized(
+    message: String? = null,
+) : StatusCodeException(HttpStatusCode.Unauthorized, message)
 
 suspend inline fun RoutingContext.wrap(block: RoutingContext.() -> Any?) {
     try {

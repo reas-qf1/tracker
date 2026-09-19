@@ -32,7 +32,7 @@ fun AlbumInfoScreen(
     arguments: AlbumInfo,
     applicationState: ApplicationState,
     modifier: Modifier = Modifier,
-    viewModel: AlbumInfoScreenViewModel = koinViewModel()
+    viewModel: AlbumInfoScreenViewModel = koinViewModel(),
 ) {
     val album = arguments.album
     val sort by viewModel.sort().collectAsStateWithLifecycle()
@@ -52,7 +52,7 @@ fun AlbumInfoScreen(
     applicationState.setTitle("${album.artistsAsString} - ${album.name}")
     Column(
         modifier = modifier.padding(top = 5.dp, start = 5.dp, end = 5.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         SortOrderSelectionChip(sort, { scope.launch { viewModel.setSort(it) } })
         Column(
@@ -62,18 +62,18 @@ fun AlbumInfoScreen(
             ListEntryWithImage(
                 modifier = Modifier.height(125.dp),
                 alignment = Alignment.CenterVertically,
-                url = { viewModel.getAlbumImageUrl(album) }
+                url = { viewModel.getAlbumImageUrl(album) },
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1.0F)
+                    modifier = Modifier.weight(1.0F),
                 ) {
                     AutosizingText(album.name, style = MaterialTheme.typography.displaySmall)
                     album.artists.forEach { artist ->
                         AutosizingText(
                             artist.name,
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.secondary,
                         )
                     }
                 }
@@ -81,7 +81,7 @@ fun AlbumInfoScreen(
             Spacer(Modifier.height(5.dp))
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 InfoBox {
                     AutosizingText(playsAsString, style = MaterialTheme.typography.headlineSmall)
@@ -97,14 +97,14 @@ fun AlbumInfoScreen(
                         Text(
                             stringResource(Res.string.in_charts_by_time),
                             color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     } else {
                         AutosizingText(playRank, style = MaterialTheme.typography.headlineSmall)
                         Text(
                             stringResource(Res.string.in_charts_by_plays),
                             color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -116,10 +116,12 @@ fun AlbumInfoScreen(
             InfoChartHeader(
                 stringResource(Res.string.top_tracks),
                 onClick = {},
-                modifier = Modifier.padding(top = 5.dp)
+                modifier = Modifier.padding(top = 5.dp),
             )
             DoubleChartColumn(
-                sort.byTime, timeTracks, playTracks,
+                sort.byTime,
+                timeTracks,
+                playTracks,
                 onClick = { entry -> applicationState.navigate(entry.bottomSheetInfo) },
             )
 

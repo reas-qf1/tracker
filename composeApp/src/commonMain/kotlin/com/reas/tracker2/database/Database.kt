@@ -11,26 +11,30 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
     override fun initialize(): AppDatabase
 }
 
-@Database(entities = [
-    PlayEntity::class,
-    TrackEntity::class,
-    AlbumEntity::class,
-    ArtistEntity::class,
-    TrackArtistCrossRef::class,
-    AlbumArtistCrossRef::class,
-], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        PlayEntity::class,
+        TrackEntity::class,
+        AlbumEntity::class,
+        ArtistEntity::class,
+        TrackArtistCrossRef::class,
+        AlbumArtistCrossRef::class,
+    ],
+    version = 1,
+    exportSchema = false,
+)
 @ColumnTypeConverters(Converters::class)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun playDao(): PlayDao
+
     abstract fun trackDao(): TrackDao
 
     companion object {
-        fun getDatabase(builder: Builder<AppDatabase>) : AppDatabase {
-            return builder
+        fun getDatabase(builder: Builder<AppDatabase>): AppDatabase =
+            builder
                 .setQueryCoroutineContext(Dispatchers.IO)
                 .fallbackToDestructiveMigration(false)
                 .build()
-        }
     }
 }

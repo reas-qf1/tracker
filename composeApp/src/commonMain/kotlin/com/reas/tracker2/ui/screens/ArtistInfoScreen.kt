@@ -32,7 +32,7 @@ fun ArtistInfoScreen(
     arguments: ArtistInfo,
     applicationState: ApplicationState,
     modifier: Modifier = Modifier,
-    viewModel: ArtistInfoScreenViewModel = koinViewModel()
+    viewModel: ArtistInfoScreenViewModel = koinViewModel(),
 ) {
     val artist = arguments.artist
     val sort by viewModel.sort().collectAsStateWithLifecycle()
@@ -54,7 +54,7 @@ fun ArtistInfoScreen(
     applicationState.setTitle(artist.name)
     Column(
         modifier = modifier.padding(top = 5.dp, start = 5.dp, end = 5.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         SortOrderSelectionChip(sort, { scope.launch { viewModel.setSort(it) } })
         Column(
@@ -63,18 +63,18 @@ fun ArtistInfoScreen(
         ) {
             ListEntryWithImage(
                 modifier = Modifier.height(125.dp),
-                alignment = Alignment.CenterVertically
+                alignment = Alignment.CenterVertically,
             ) {
                 AutosizingText(
                     artist.name,
                     style = MaterialTheme.typography.displaySmall,
-                    modifier = Modifier.weight(1.0F)
+                    modifier = Modifier.weight(1.0F),
                 )
             }
             Spacer(Modifier.height(5.dp))
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 InfoBox {
                     AutosizingText(playsAsString, style = MaterialTheme.typography.headlineSmall)
@@ -90,14 +90,14 @@ fun ArtistInfoScreen(
                         Text(
                             stringResource(Res.string.in_charts_by_time),
                             color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     } else {
                         AutosizingText(playRank, style = MaterialTheme.typography.headlineSmall)
                         Text(
                             stringResource(Res.string.in_charts_by_plays),
                             color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -109,10 +109,12 @@ fun ArtistInfoScreen(
             InfoChartHeader(
                 stringResource(Res.string.top_albums),
                 onClick = {},
-                modifier = Modifier.padding(top = 5.dp)
+                modifier = Modifier.padding(top = 5.dp),
             )
             DoubleChartColumn(
-                sort.byTime, timeAlbums, playAlbums,
+                sort.byTime,
+                timeAlbums,
+                playAlbums,
                 onClick = { entry -> applicationState.navigate(entry.bottomSheetInfo) },
             )
 
@@ -122,10 +124,12 @@ fun ArtistInfoScreen(
             InfoChartHeader(
                 stringResource(Res.string.top_tracks),
                 onClick = {},
-                modifier = Modifier.padding(top = 5.dp)
+                modifier = Modifier.padding(top = 5.dp),
             )
             DoubleChartColumn(
-                sort.byTime, timeTracks, playTracks,
+                sort.byTime,
+                timeTracks,
+                playTracks,
                 onClick = { entry -> applicationState.navigate(entry.bottomSheetInfo) },
             )
 

@@ -13,21 +13,21 @@ import kotlinx.coroutines.flow.map
 class TrackInfoScreenViewModel(
     private val repository: Repository,
     private val settings: Settings,
-    private val networkRepository: NetworkRepository
-): TrackerViewModel() {
-    fun plays(track: TrackWithAlbum, period: TimePeriod) =
-        repository.getTrackPlays(track, period).asIntStateFlow()
+    private val networkRepository: NetworkRepository,
+) : TrackerViewModel() {
+    fun plays(track: TrackWithAlbum, period: TimePeriod) = repository.getTrackPlays(track, period).asIntStateFlow()
 
-    fun timePlayed(track: TrackWithAlbum, period: TimePeriod) =
-        repository.getTrackTimePlayed(track, period).asDurationStateFlow()
+    fun timePlayed(track: TrackWithAlbum, period: TimePeriod) = repository.getTrackTimePlayed(track, period).asDurationStateFlow()
 
     fun rank(track: TrackWithAlbum, period: TimePeriod) =
-        repository.getTrackRank(track, period)
+        repository
+            .getTrackRank(track, period)
             .map { "#" + (it + 1).toString() }
             .asStringStateFlow()
 
     fun playRank(track: TrackWithAlbum, period: TimePeriod) =
-        repository.getTrackRankByPlayCount(track, period)
+        repository
+            .getTrackRankByPlayCount(track, period)
             .map { "#" + (it + 1).toString() }
             .asStringStateFlow()
 
@@ -37,11 +37,7 @@ class TrackInfoScreenViewModel(
         settings[chartSort] = sort
     }
 
-    suspend fun getAlbumImageUrl(album: Album): String? {
-        return networkRepository.getAlbumImageUrl(album, "large")
-    }
+    suspend fun getAlbumImageUrl(album: Album): String? = networkRepository.getAlbumImageUrl(album, "large")
 
-    suspend fun getTrackImageUrl(track: TrackWithAlbum): String? {
-        return track.asAlbum?.let { getAlbumImageUrl(it) }
-    }
+    suspend fun getTrackImageUrl(track: TrackWithAlbum): String? = track.asAlbum?.let { getAlbumImageUrl(it) }
 }

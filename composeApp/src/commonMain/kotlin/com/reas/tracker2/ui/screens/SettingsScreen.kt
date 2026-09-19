@@ -24,22 +24,22 @@ import tracker2.composeapp.generated.resources.settings
 fun SettingsScreen(
     applicationState: ApplicationState,
     modifier: Modifier = Modifier,
-    viewModel: SettingsScreenViewModel = koinViewModel()
+    viewModel: SettingsScreenViewModel = koinViewModel(),
 ) {
     applicationState.setTitle(stringResource(Res.string.settings))
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = modifier.padding(horizontal = 10.dp)
+        modifier = modifier.padding(horizontal = 10.dp),
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             val scrobblingEnabled by rememberAsState { viewModel.scrobblingEnabledFlow }
             Text(stringResource(Res.string.enable_tracking))
             Spacer(Modifier.weight(1.0F))
             Switch(
                 checked = scrobblingEnabled,
-                onCheckedChange = { viewModel.setScrobblingEnabled(it) }
+                onCheckedChange = { viewModel.setScrobblingEnabled(it) },
             )
         }
 

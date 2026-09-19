@@ -21,18 +21,15 @@ import com.reas.tracker2.ui.viewmodels.DebugScreenViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun DebugScreen(
-    applicationState: ApplicationState,
-    modifier: Modifier = Modifier,
-    viewModel: DebugScreenViewModel = koinViewModel()
-) {
+fun DebugScreen(applicationState: ApplicationState, modifier: Modifier = Modifier, viewModel: DebugScreenViewModel = koinViewModel()) {
     val playCount by rememberAsState { viewModel.playCount }
     val mediaEventLog by rememberAsState { viewModel.mediaEventLog }
 
     val verticalScrollState = rememberScrollState()
     LaunchedEffect(mediaEventLog) {
-        if (!verticalScrollState.canScrollForward)
+        if (!verticalScrollState.canScrollForward) {
             verticalScrollState.scrollTo(Int.MAX_VALUE)
+        }
     }
 
     applicationState.setTitle("Debug")
@@ -44,12 +41,13 @@ fun DebugScreen(
             fontSize = MaterialTheme.typography.bodySmall.fontSize,
             fontFamily = FontFamily.Monospace,
             lineHeight = MaterialTheme.typography.bodySmall.fontSize * 1.2,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(10.dp)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh, shape = MaterialTheme.shapes.medium)
                 .verticalScroll(verticalScrollState)
                 .horizontalScroll(rememberScrollState())
-                .padding(10.dp)
+                .padding(10.dp),
         )
     }
 }

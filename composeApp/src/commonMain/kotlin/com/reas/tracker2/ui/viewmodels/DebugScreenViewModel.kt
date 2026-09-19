@@ -6,13 +6,14 @@ import kotlinx.coroutines.flow.runningFold
 
 class DebugScreenViewModel(
     private val repository: Repository,
-    private val inMemoryLog: InMemoryLog
+    private val inMemoryLog: InMemoryLog,
 ) : TrackerViewModel() {
     val playCount
         get() = repository.getPlayCount().asIntStateFlow()
 
     val mediaEventLog
-        get() = inMemoryLog["MediaEvents"]
-            .runningFold("") { a, b -> "$a$b\n" }
-            .asStringStateFlow()
+        get() =
+            inMemoryLog["MediaEvents"]
+                .runningFold("") { a, b -> "$a$b\n" }
+                .asStringStateFlow()
 }

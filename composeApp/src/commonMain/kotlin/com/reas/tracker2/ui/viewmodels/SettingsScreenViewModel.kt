@@ -5,7 +5,9 @@ import com.reas.tracker2.settings.Settings
 import com.reas.tracker2.settings.isScrobblingEnabled
 import kotlinx.coroutines.launch
 
-class SettingsScreenViewModel(private val settings: Settings) : TrackerViewModel() {
+class SettingsScreenViewModel(
+    private val settings: Settings,
+) : TrackerViewModel() {
     val scrobblingEnabledFlow = settings.stateFlow(isScrobblingEnabled)
 
     fun setScrobblingEnabled(value: Boolean) {

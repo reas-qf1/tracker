@@ -32,7 +32,7 @@ data class ChartEntryUiState(
     val metric: Double,
     val metricAsString: String,
     val bottomSheetInfo: BottomSheetInfo,
-    val url: suspend () -> Any? = { null }
+    val url: suspend () -> Any? = { null },
 )
 
 @Composable
@@ -47,14 +47,14 @@ fun DoubleChartColumn(
         AnimatedVisibility(
             sortedByTime,
             enter = fadeIn(),
-            exit = fadeOut()
+            exit = fadeOut(),
         ) {
             ChartColumn(itemsByTime, onClick, modifier)
         }
         AnimatedVisibility(
             !sortedByTime,
             enter = fadeIn(),
-            exit = fadeOut()
+            exit = fadeOut(),
         ) {
             ChartColumn(itemsByPlays, onClick, modifier)
         }
@@ -77,7 +77,7 @@ fun LazyDoubleChartColumn(
         AnimatedVisibility(
             sortedByTime,
             enter = fadeIn(),
-            exit = fadeOut()
+            exit = fadeOut(),
         ) {
             LazyChartColumn(applicationState, itemsByTime, onClick, modifier, state1)
 
@@ -92,7 +92,7 @@ fun LazyDoubleChartColumn(
         AnimatedVisibility(
             !sortedByTime,
             enter = fadeIn(),
-            exit = fadeOut()
+            exit = fadeOut(),
         ) {
             LazyChartColumn(applicationState, itemsByPlays, onClick, modifier, state2)
 
@@ -108,14 +108,10 @@ fun LazyDoubleChartColumn(
 }
 
 @Composable
-fun ChartColumn(
-    items: List<ChartEntryUiState>,
-    onClick: (ChartEntryUiState) -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun ChartColumn(items: List<ChartEntryUiState>, onClick: (ChartEntryUiState) -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         repeat(items.size) { i ->
             val entry = items[i]
@@ -126,7 +122,7 @@ fun ChartColumn(
                 metricAsString = entry.metricAsString,
                 metric = entry.metric / items[0].metric,
                 onClick = { onClick(entry) },
-                url = entry.url
+                url = entry.url,
             )
         }
     }
@@ -138,13 +134,13 @@ fun LazyChartColumn(
     items: LazyPagingItems<ChartEntryUiState>,
     onClick: (ChartEntryUiState) -> Unit,
     modifier: Modifier = Modifier,
-    state: LazyListState = rememberLazyListState()
+    state: LazyListState = rememberLazyListState(),
 ) {
     LazyColumnWithScrollButton(
         applicationState = applicationState,
         modifier = modifier,
         state = state,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         items(
             items.itemCount,
@@ -160,13 +156,12 @@ fun LazyChartColumn(
                     metric = entry.metric / items[0]!!.metric,
                     onClick = { onClick(entry) },
                     url = entry.url,
-                    modifier = Modifier.animateItem()
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
     }
 }
-
 
 @Composable
 fun ChartEntry(
@@ -177,7 +172,7 @@ fun ChartEntry(
     metricAsString: String,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
-    url: suspend () -> Any? = { null }
+    url: suspend () -> Any? = { null },
 ) {
     ListEntryWithImage(
         dynamicColor = true,
@@ -185,31 +180,31 @@ fun ChartEntry(
             .height(87.dp)
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        url = url
+        url = url,
     ) {
         Column(
             modifier = Modifier.padding(end = 10.dp).fillMaxHeight(),
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             ConstrainedText(
                 "$number. $label",
                 height = 28.dp,
                 baselineHeight = 22.dp,
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge,
             )
             label2?.let {
                 ConstrainedText(
                     label2,
                     height = 20.dp,
                     baselineHeight = 16.dp,
-                    style = MaterialTheme.typography.titleSmall
+                    style = MaterialTheme.typography.titleSmall,
                 )
             }
             Spacer(Modifier.height(3.dp))
             Text(
                 metricAsString,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.secondary,
             )
             Spacer(Modifier.height(2.dp))
             LinearProgressIndicator(

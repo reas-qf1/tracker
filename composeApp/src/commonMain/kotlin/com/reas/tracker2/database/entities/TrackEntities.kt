@@ -6,7 +6,7 @@ import androidx.room3.PrimaryKey
 
 @Entity(
     tableName = "tracks",
-    indices = [Index("name", "albumId", "artistIds", unique = true)]
+    indices = [Index("name", "albumId", "artistIds", unique = true)],
 )
 data class TrackEntity(
     @PrimaryKey(autoGenerate = true)
@@ -19,7 +19,7 @@ data class TrackEntity(
 
 @Entity(
     tableName = "albums",
-    indices = [Index("name", "artistIds", unique = true)]
+    indices = [Index("name", "artistIds", unique = true)],
 )
 data class AlbumEntity(
     @PrimaryKey(autoGenerate = true)
@@ -31,7 +31,7 @@ data class AlbumEntity(
 
 @Entity(
     tableName = "artists",
-    indices = [Index("name", unique = true)]
+    indices = [Index("name", unique = true)],
 )
 data class ArtistEntity(
     @PrimaryKey(autoGenerate = true)
@@ -42,19 +42,19 @@ data class ArtistEntity(
 @Entity(
     tableName = "track_artists",
     primaryKeys = ["trackId", "artistId"],
-    indices = [Index(value = ["artistId"])]
+    indices = [Index(value = ["artistId"])],
 )
 data class TrackArtistCrossRef(
     val trackId: Long,
-    val artistId: Long
+    val artistId: Long,
 )
 
 @Entity(
     tableName = "album_artists",
     primaryKeys = ["albumId", "artistId"],
-    indices = [Index(value = ["artistId"])]
+    indices = [Index(value = ["artistId"])],
 )
 data class AlbumArtistCrossRef(
     val albumId: Long,
-    val artistId: Long
+    val artistId: Long,
 )

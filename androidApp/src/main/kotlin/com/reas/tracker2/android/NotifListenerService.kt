@@ -27,7 +27,10 @@ private object NotificationListenerService {
     val logger = KotlinLogging.logger {}
 }
 
-private class MediaCallback(private val appId: String): MediaController.Callback(), KoinComponent {
+private class MediaCallback(
+    private val appId: String,
+) : MediaController.Callback(),
+    KoinComponent {
     private val logger = com.reas.tracker2.android.NotificationListenerService.logger
     private val inMemoryLogger: InMemoryLog by inject()
     private val mediaEventProcessor: MediaEventRelay by inject()
@@ -51,14 +54,16 @@ private class MediaCallback(private val appId: String): MediaController.Callback
     }
 
     override fun onMetadataChanged(metadata: MediaMetadata?) {
-        log { """
+        log {
+            """
             onMetadataChanged      ($appId)
                     track=${metadata?.title}
                     artist=${metadata?.artist}
                     album=${metadata?.album}
                     albumArtist=${metadata?.albumArtist}
                     duration=${metadata?.duration}
-        """.trimIndent() }
+            """.trimIndent()
+        }
 
         if (metadata == null) return
         currentMetadata = metadata
@@ -86,13 +91,15 @@ private class MediaCallback(private val appId: String): MediaController.Callback
     }
 
     override fun onPlaybackStateChanged(state: PlaybackState?) {
-        log { """
+        log {
+            """
             onPlaybackStateChanged ($appId)
                     lastPositionUpdateTime=${state?.lastPositionUpdateTime}
                     position=${state?.position}
                     state=${getStringForStateInt(state?.state)}
                     playbackSpeed=${state?.playbackSpeed}
-        """.trimIndent() }
+            """.trimIndent()
+        }
 
         if (state == null) return
         currentState = state
@@ -102,13 +109,16 @@ private class MediaCallback(private val appId: String): MediaController.Callback
 
     fun onDisconnect() {
         log { "onDisconnect           ($appId)" }
-        currentState = currentState?.let {
-            PlaybackState.Builder(it).setState(
-                PlaybackState.STATE_STOPPED,
-                it.position + SystemClock.elapsedRealtime() - it.lastPositionUpdateTime,
-                1.0f
-            ).build()
-        }
+        currentState =
+            currentState?.let {
+                PlaybackState
+                    .Builder(it)
+                    .setState(
+                        PlaybackState.STATE_STOPPED,
+                        it.position + SystemClock.elapsedRealtime() - it.lastPositionUpdateTime,
+                        1.0f,
+                    ).build()
+            }
         lastUpdateTime = System.currentTimeMillis()
         addEvent()
     }
@@ -134,7 +144,9 @@ private class MediaCallback(private val appId: String): MediaController.Callback
     }
 }
 
-private class SessionListener: MediaSessionManager.OnActiveSessionsChangedListener, KoinComponent {
+private class SessionListener :
+    MediaSessionManager.OnActiveSessionsChangedListener,
+    KoinComponent {
     private val logger = com.reas.tracker2.android.NotificationListenerService.logger
     private val inMemoryLogger: InMemoryLog by inject()
     private val settings: Settings by inject()
@@ -224,7 +236,9 @@ private class SessionListener: MediaSessionManager.OnActiveSessionsChangedListen
     }
 }
 
-class NotifListenerService: NotificationListenerService(), KoinComponent {
+class NotifListenerService :
+    NotificationListenerService(),
+    KoinComponent {
     private val logger = com.reas.tracker2.android.NotificationListenerService.logger
     private var initialized = false
     private var listener: SessionListener? = null
@@ -232,7 +246,11 @@ class NotifListenerService: NotificationListenerService(), KoinComponent {
     private val notificationWrapper: NotificationWrapper by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         ServiceCompat.startForeground(
             this,
             NotificationWrapper.PLAYING_ID,
@@ -241,10 +259,11 @@ class NotifListenerService: NotificationListenerService(), KoinComponent {
                 setSmallIcon(R.drawable.ic_stat_name)
                 setShowWhen(false)
             },
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            else
+            } else {
                 0
+            },
         )
         return START_STICKY
     }

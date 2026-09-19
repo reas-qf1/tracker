@@ -32,50 +32,53 @@ import androidx.navigation3.scene.DialogSceneStrategy.Companion.DialogKey
 import androidx.navigation3.ui.NavDisplay
 import com.reas.tracker2.ui.derivedState
 
-class CustomNavEntryDecorator<T : Any>(appState: ApplicationState): NavEntryDecorator<T>(
-    decorate = { entry ->
-        if (!entry.metadata.contains(DialogKey))
-            appState.floatingActionButton(visibleIf = false) {}
-        entry.Content()
-    },
-    onPop = {  }
-)
+class CustomNavEntryDecorator<T : Any>(
+    appState: ApplicationState,
+) : NavEntryDecorator<T>(
+        decorate = { entry ->
+            if (!entry.metadata.contains(DialogKey)) {
+                appState.FloatingActionButton(visibleIf = false) {}
+            }
+            entry.Content()
+        },
+        onPop = { },
+    )
 
-inline fun<reified T : NavKey> EntryProviderScope<NavKey>.dialog(noinline content: @Composable (T) -> Unit) =
+inline fun <reified T : NavKey> EntryProviderScope<NavKey>.dialog(noinline content: @Composable (T) -> Unit) =
     entry<T>(metadata = DialogSceneStrategy.dialog(), content = content)
-
 
 data class TrackerNavItem(
     val title: String,
     val icon: ImageVector,
-    val destination: Route
+    val destination: Route,
 )
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackerNavScaffold(
     applicationState: TrackerApplicationState,
     modifier: Modifier = Modifier,
     navigationItems: List<TrackerNavItem>,
-    entries: EntryProviderScope<NavKey>.() -> Unit
+    entries: EntryProviderScope<NavKey>.() -> Unit,
 ) {
     val canNavigateBack by derivedState { applicationState.canNavigateBack() }
     val currentTab by derivedState { applicationState.currentTab() }
 
     val navLayoutType = NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfo())
-    val scrollBehavior = if (navLayoutType == NavigationSuiteType.ShortNavigationBarMedium)
-        TopAppBarDefaults.enterAlwaysScrollBehavior()
-    else
-        TopAppBarDefaults.pinnedScrollBehavior()
+    val scrollBehavior =
+        if (navLayoutType == NavigationSuiteType.ShortNavigationBarMedium) {
+            TopAppBarDefaults.enterAlwaysScrollBehavior()
+        } else {
+            TopAppBarDefaults.pinnedScrollBehavior()
+        }
 
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = applicationState.snackbarHostState())
         },
         floatingActionButton = {
-            if (navLayoutType == NavigationSuiteType.WideNavigationRailCollapsed)
-                applicationState.showActionButton()
+            if (navLayoutType == NavigationSuiteType.WideNavigationRailCollapsed) {
+                applicationState.ActionButton()
+            }
         },
         topBar = {
             TopAppBar(
@@ -83,16 +86,18 @@ fun TrackerNavScaffold(
                     Text(
                         applicationState.getTitle(),
                         color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis
-                    ) },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
                 navigationIcon = {
                     IconButton(
                         onClick = { applicationState.goBack() },
-                        enabled = canNavigateBack
+                        enabled = canNavigateBack,
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
@@ -118,26 +123,32 @@ fun TrackerNavScaffold(
             },
             navigationSuiteType = navLayoutType,
             navigationItemVerticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
-            modifier = Modifier.padding(
-                top = innerPadding.calculateTopPadding(),
-                start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
-                end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
-            ),
+            modifier =
+                Modifier.padding(
+                    top = innerPadding.calculateTopPadding(),
+                    start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                    end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                ),
             primaryActionContent = {
-                if (navLayoutType == NavigationSuiteType.ShortNavigationBarCompact || navLayoutType == NavigationSuiteType.ShortNavigationBarMedium)
-                    applicationState.showActionButton()
-            }
+                if (navLayoutType == NavigationSuiteType.ShortNavigationBarCompact ||
+                    navLayoutType == NavigationSuiteType.ShortNavigationBarMedium
+                ) {
+                    applicationState.ActionButton()
+                }
+            },
         ) {
             val entryProvider = entryProvider(builder = entries)
-            val decorators = listOf(
-                rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
-                remember { CustomNavEntryDecorator(applicationState) },
-            )
-            val decoratedEntries = rememberDecoratedNavEntries(
-                backStack = applicationState.state.backStack,
-                entryDecorators = decorators,
-                entryProvider = entryProvider
-            )
+            val decorators =
+                listOf(
+                    rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
+                    remember { CustomNavEntryDecorator(applicationState) },
+                )
+            val decoratedEntries =
+                rememberDecoratedNavEntries(
+                    backStack = applicationState.state.backStack,
+                    entryDecorators = decorators,
+                    entryProvider = entryProvider,
+                )
             NavDisplay(
                 entries = decoratedEntries.toMutableStateList(),
                 onBack = { applicationState.goBack() },
@@ -145,9 +156,9 @@ fun TrackerNavScaffold(
                 predictivePopTransitionSpec = {
                     ContentTransform(
                         fadeIn(),
-                        fadeOut()
+                        fadeOut(),
                     )
-                }
+                },
             )
         }
     }

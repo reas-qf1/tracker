@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TrackerApp(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }

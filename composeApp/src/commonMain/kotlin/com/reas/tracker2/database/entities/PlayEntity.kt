@@ -12,8 +12,8 @@ import kotlin.time.Instant
     indices = [
         Index("trackId", unique = false),
         Index("timestamp", orders = [Index.Order.DESC], unique = false),
-        Index("sourceDevice", "sourceApp", "timestamp", unique = true)
-    ]
+        Index("sourceDevice", "sourceApp", "timestamp", unique = true),
+    ],
 )
 data class PlayEntity(
     @PrimaryKey(autoGenerate = true) val id: Long,
@@ -27,5 +27,5 @@ data class PlayEntity(
     var lastPlaying: Boolean,
     val sourceDevice: String,
     val sourceApp: String,
-    val associatedEvents: MutableList<EventInfo>
+    val associatedEvents: MutableList<EventInfo>,
 )

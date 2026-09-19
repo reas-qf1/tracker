@@ -8,9 +8,10 @@ private object Database {
     val logger = KotlinLogging.logger {}
 }
 
-class PlatformDependentPathsAndroid(val context: Context) : PlatformDependentPaths {
-    override fun getPreferencesPath(): String =
-        context.filesDir.resolve(dataStoreFileName).absolutePath
+class PlatformDependentPathsAndroid(
+    val context: Context,
+) : PlatformDependentPaths {
+    override fun getPreferencesPath(): String = context.filesDir.resolve(dataStoreFileName).absolutePath
 
     override fun getDatabasePath(): String {
         val appContext = context.applicationContext

@@ -14,13 +14,14 @@ class TrackHistoryViewModel(
     private val networkRepository: NetworkRepository,
     private val eventProcessor: EventProcessor,
     private val nowPlayingNotificationManager: NowPlayingNotificationManager,
-): TrackerViewModel() {
+) : TrackerViewModel() {
     fun history(track: TrackWithAlbum) =
         pagingDataFlow { repository.getTrackHistory(track) }
             .mapElements { entity -> repository.playEntityToObject(entity) }
 
     fun trackPlays(track: TrackWithAlbum) =
-        repository.getTrackPlays(track, TimePeriod.ALLTIME)
+        repository
+            .getTrackPlays(track, TimePeriod.ALLTIME)
             .map { it.toString() }
             .asStringStateFlow()
 

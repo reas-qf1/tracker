@@ -14,6 +14,7 @@ import tracker2.composeapp.generated.resources.*
 
 @Serializable
 sealed class Route : NavKey
+
 @Serializable
 sealed class DialogRoute : Route()
 
@@ -36,12 +37,13 @@ enum class ChartType {
             get() = Icons.Filled.MusicNote
         override val label: StringResource
             get() = Res.string.tracks
-    };
+    },
+    ;
 
     @Transient abstract val icon: ImageVector
+
     @Transient abstract val label: StringResource
 }
-
 
 @Serializable
 enum class ChartSort {
@@ -51,31 +53,34 @@ enum class ChartSort {
         override val label: StringResource
             get() = Res.string.time_played
         override val byTime = true
-    }, PLAYS {
+    },
+    PLAYS {
         override val icon: ImageVector
             get() = Icons.Filled.PlayArrow
         override val label: StringResource
             get() = Res.string.plays
         override val byTime = false
-    };
+    },
+    ;
 
     @Transient abstract val icon: ImageVector
+
     @Transient abstract val label: StringResource
+
     @Transient abstract val byTime: Boolean
 }
-
 
 @Serializable
 object History : Route()
 
 @Serializable
 data class TrackHistory(
-    val track: TrackWithAlbum
+    val track: TrackWithAlbum,
 ) : Route()
 
 @Serializable
 data class Charts(
-    val type: ChartType = ChartType.ARTISTS
+    val type: ChartType = ChartType.ARTISTS,
 ) : Route()
 
 @Serializable
@@ -86,27 +91,27 @@ object Debug : Route()
 
 @Serializable
 data class ArtistInfo(
-    val artist: Artist
+    val artist: Artist,
 ) : Route()
 
 @Serializable
 data class AlbumInfo(
-    val album: Album
+    val album: Album,
 ) : Route()
 
 @Serializable
 data class TrackInfo(
-    val track: TrackWithAlbum
+    val track: TrackWithAlbum,
 ) : Route()
 
 @Serializable
 data class BottomSheetInfo(
     val artist: Artist? = null,
     val album: Album? = null,
-    val track: TrackWithAlbum? = null
+    val track: TrackWithAlbum? = null,
 ) : DialogRoute()
 
 @Serializable
 data class Error(
-    val message: String
+    val message: String,
 ) : DialogRoute()

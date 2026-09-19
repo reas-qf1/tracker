@@ -34,13 +34,13 @@ fun LazyColumnWithScrollButton(
 ) {
     val showButton by derivedState { state.firstVisibleItemIndex > 0 }
     val scope = rememberCoroutineScope()
-    applicationState.floatingActionButton(
+    applicationState.FloatingActionButton(
         visibleIf = showButton,
         onClick = {
             scope.launch {
                 state.animateScrollToItem(0)
             }
-        }
+        },
     ) {
         Icon(imageVector = Icons.Filled.ArrowUpward, contentDescription = "Scroll to top")
     }
@@ -61,24 +61,25 @@ fun LazyColumnWithScrollButton(
 }
 
 @Composable
-fun EndIndicator(
-    modifier: Modifier = Modifier
-) {
+fun EndIndicator(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier.fillMaxWidth().background(
-            brush = Brush.composite(
-                verticalGradient(colors = listOf(
-                    MaterialTheme.colorScheme.background,
-                    MaterialTheme.colorScheme.surfaceContainerHighest
-                )),
-                horizontalGradient(
-                    0.0f to Color.White.copy(alpha = 0.0f),
-                    0.2f to Color.White,
-                    0.8f to Color.White,
-                    1.0f to Color.White.copy(alpha = 0.0f)
+        modifier =
+            modifier.fillMaxWidth().background(
+                brush = Brush.composite(
+                    verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.surfaceContainerHighest,
+                        ),
+                    ),
+                    horizontalGradient(
+                        0.0f to Color.White.copy(alpha = 0.0f),
+                        0.2f to Color.White,
+                        0.8f to Color.White,
+                        1.0f to Color.White.copy(alpha = 0.0f),
+                    ),
+                    blendMode = BlendMode.Modulate,
                 ),
-                blendMode = BlendMode.Modulate
-            )
-        )
+            ),
     )
 }

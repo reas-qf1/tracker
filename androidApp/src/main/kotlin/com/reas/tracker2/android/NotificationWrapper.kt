@@ -14,22 +14,24 @@ private data class ChannelDescription(
     val id: String,
     val name: String,
     val importance: Int,
-    val configuration: NotificationChannel.() -> Unit = {}
+    val configuration: NotificationChannel.() -> Unit = {},
 )
 
 class NotificationWrapper(
     private val context: Context,
-    private val notificationManager: NotificationManager
+    private val notificationManager: NotificationManager,
 ) {
     companion object {
         const val PLAYING_ID = 0
     }
+
     private var nextId = 1
-    private val channelDescriptions = listOf(
-        ChannelDescription("0", "Now Playing", 2),
-        ChannelDescription("1", "Daily Report", 1),
-        ChannelDescription("2", "Sync Worker", 1)
-    )
+    private val channelDescriptions =
+        listOf(
+            ChannelDescription("0", "Now Playing", 2),
+            ChannelDescription("1", "Daily Report", 1),
+            ChannelDescription("2", "Sync Worker", 1),
+        )
 
     private val channels = hashMapOf<String, String>()
     private val logger = KotlinLogging.logger {}
@@ -41,8 +43,9 @@ class NotificationWrapper(
     }
 
     fun createChannels() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return
+        }
 
         notificationManager.notificationChannels.forEach { channel ->
             notificationManager.deleteNotificationChannel(channel.id)
@@ -55,21 +58,32 @@ class NotificationWrapper(
 
     fun reserveId() = nextId++
 
-    fun notification(channel: String, params: NotificationBuilder): Notification {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            Notification.Builder(context, channels[channel]).apply {
-                params(context)
-            }.build()
-        else
-            Notification.Builder(context).apply {
-                params(context)
-            }.build()
-    }
+    fun notification(
+        channel: String,
+        params: NotificationBuilder,
+    ): Notification =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification
+                .Builder(context, channels[channel])
+                .apply {
+                    params(context)
+                }.build()
+        } else {
+            Notification
+                .Builder(context)
+                .apply {
+                    params(context)
+                }.build()
+        }
 
-    fun show(channel: String, id: Int? = null, params: NotificationBuilder): Int {
+    fun show(
+        channel: String,
+        id: Int? = null,
+        params: NotificationBuilder,
+    ): Int {
         if (ActivityCompat.checkSelfPermission(
                 context,
-                Manifest.permission.POST_NOTIFICATIONS
+                Manifest.permission.POST_NOTIFICATIONS,
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             logger.error { "Notifications permission not granted" }

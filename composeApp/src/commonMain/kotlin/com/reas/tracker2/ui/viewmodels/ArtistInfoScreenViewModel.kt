@@ -19,25 +19,26 @@ class ArtistInfoScreenViewModel(
     private val repository: Repository,
     private val settings: Settings,
     private val networkRepository: NetworkRepository,
-): TrackerViewModel() {
-    fun plays(artist: Artist, period: TimePeriod) =
-        repository.getArtistPlays(artist, period).asIntStateFlow()
+) : TrackerViewModel() {
+    fun plays(artist: Artist, period: TimePeriod) = repository.getArtistPlays(artist, period).asIntStateFlow()
 
-    fun timePlayed(artist: Artist, period: TimePeriod) =
-        repository.getArtistTimePlayed(artist, period).asDurationStateFlow()
+    fun timePlayed(artist: Artist, period: TimePeriod) = repository.getArtistTimePlayed(artist, period).asDurationStateFlow()
 
     fun rank(artist: Artist, period: TimePeriod) =
-        repository.getArtistRank(artist, period)
+        repository
+            .getArtistRank(artist, period)
             .map { "#" + (it + 1).toString() }
             .asStringStateFlow()
 
     fun playRank(artist: Artist, period: TimePeriod) =
-        repository.getArtistRankByPlayCount(artist, period)
+        repository
+            .getArtistRankByPlayCount(artist, period)
             .map { "#" + (it + 1).toString() }
             .asStringStateFlow()
 
     fun topAlbums(artist: Artist, period: TimePeriod) =
-        repository.getMostPlayedAlbumsFromArtist(artist, period, limit = 5)
+        repository
+            .getMostPlayedAlbumsFromArtist(artist, period, limit = 5)
             .mapElements { info ->
                 ChartEntryUiState(
                     label = info.album.name,
@@ -46,12 +47,13 @@ class ArtistInfoScreenViewModel(
                     metric = info.timePlayed.inMs,
                     metricAsString = info.timePlayed.toDisplayString(),
                     bottomSheetInfo = BottomSheetInfo(album = info.album),
-                    url = { getAlbumImageUrl(info.album) }
+                    url = { getAlbumImageUrl(info.album) },
                 )
             }.asListStateFlow()
 
     fun topAlbumsByPlayCount(artist: Artist, period: TimePeriod) =
-        repository.getMostPlayedAlbumsFromArtistByPlayCount(artist, period, limit = 5)
+        repository
+            .getMostPlayedAlbumsFromArtistByPlayCount(artist, period, limit = 5)
             .mapElements { info ->
                 ChartEntryUiState(
                     label = info.album.name,
@@ -60,12 +62,13 @@ class ArtistInfoScreenViewModel(
                     metric = info.playCount.toDouble(),
                     metricAsString = "${info.playCount} plays",
                     bottomSheetInfo = BottomSheetInfo(album = info.album),
-                    url = { getAlbumImageUrl(info.album) }
+                    url = { getAlbumImageUrl(info.album) },
                 )
             }.asListStateFlow()
 
     fun topTracks(artist: Artist, period: TimePeriod) =
-        repository.getMostPlayedTracksFromArtist(artist, period, limit = 5)
+        repository
+            .getMostPlayedTracksFromArtist(artist, period, limit = 5)
             .mapElements { info ->
                 ChartEntryUiState(
                     label = info.track.name,
@@ -74,12 +77,13 @@ class ArtistInfoScreenViewModel(
                     metric = info.timePlayed.inMs,
                     metricAsString = info.timePlayed.toDisplayString(),
                     bottomSheetInfo = BottomSheetInfo(track = info.track),
-                    url = { getTrackImageUrl(info.track) }
+                    url = { getTrackImageUrl(info.track) },
                 )
             }.asListStateFlow()
 
     fun topTracksByPlayCount(artist: Artist, period: TimePeriod) =
-        repository.getMostPlayedTracksFromArtistByPlayCount(artist, period, limit = 5)
+        repository
+            .getMostPlayedTracksFromArtistByPlayCount(artist, period, limit = 5)
             .mapElements { info ->
                 ChartEntryUiState(
                     label = info.track.name,
@@ -88,7 +92,7 @@ class ArtistInfoScreenViewModel(
                     metric = info.playCount.toDouble(),
                     metricAsString = "${info.playCount} plays",
                     bottomSheetInfo = BottomSheetInfo(track = info.track),
-                    url = { getTrackImageUrl(info.track) }
+                    url = { getTrackImageUrl(info.track) },
                 )
             }.asListStateFlow()
 
@@ -98,11 +102,7 @@ class ArtistInfoScreenViewModel(
         settings[chartSort] = sort
     }
 
-    suspend fun getAlbumImageUrl(album: Album): String? {
-        return networkRepository.getAlbumImageUrl(album, "large")
-    }
+    suspend fun getAlbumImageUrl(album: Album): String? = networkRepository.getAlbumImageUrl(album, "large")
 
-    suspend fun getTrackImageUrl(track: TrackWithAlbum): String? {
-        return track.asAlbum?.let { getAlbumImageUrl(it) }
-    }
+    suspend fun getTrackImageUrl(track: TrackWithAlbum): String? = track.asAlbum?.let { getAlbumImageUrl(it) }
 }

@@ -12,13 +12,8 @@ import com.reas.tracker2.ui.state
 import org.jetbrains.compose.resources.stringResource
 import kotlin.enums.enumEntries
 
-
 @Composable
-fun ChartTypeSelectionChip(
-    value: ChartType,
-    setValue: (ChartType) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun ChartTypeSelectionChip(value: ChartType, setValue: (ChartType) -> Unit, modifier: Modifier = Modifier) {
     Box(modifier = modifier) {
         var expanded by state(false)
         AssistChip(
@@ -28,13 +23,13 @@ fun ChartTypeSelectionChip(
                 Icon(
                     value.icon,
                     contentDescription = stringResource(value.label),
-                    Modifier.size(AssistChipDefaults.IconSize)
+                    Modifier.size(AssistChipDefaults.IconSize),
                 )
-            }
+            },
         )
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
         ) {
             enumEntries<ChartType>().forEach { entry ->
                 DropdownMenuItem(
@@ -42,14 +37,14 @@ fun ChartTypeSelectionChip(
                         Icon(
                             entry.icon,
                             contentDescription = stringResource(entry.label),
-                            Modifier.size(AssistChipDefaults.IconSize)
+                            Modifier.size(AssistChipDefaults.IconSize),
                         )
                     },
                     text = { Text(stringResource(entry.label)) },
                     onClick = {
                         setValue(entry)
                         expanded = false
-                    }
+                    },
                 )
             }
         }

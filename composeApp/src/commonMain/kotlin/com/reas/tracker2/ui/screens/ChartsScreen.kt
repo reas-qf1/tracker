@@ -26,7 +26,7 @@ fun ChartsScreen(
     arguments: Charts,
     applicationState: ApplicationState,
     modifier: Modifier = Modifier,
-    viewModel: ChartsScreenViewModel = koinViewModel()
+    viewModel: ChartsScreenViewModel = koinViewModel(),
 ) {
     val chartType = arguments.type
     val sort by viewModel.sort().collectAsStateWithLifecycle()
@@ -45,8 +45,10 @@ fun ChartsScreen(
 
         LazyDoubleChartColumn(
             applicationState,
-            sort.byTime, infoTime, infoPlays,
-            onClick = { entry -> applicationState.navigate(entry.bottomSheetInfo) }
+            sort.byTime,
+            infoTime,
+            infoPlays,
+            onClick = { entry -> applicationState.navigate(entry.bottomSheetInfo) },
         )
     }
 }

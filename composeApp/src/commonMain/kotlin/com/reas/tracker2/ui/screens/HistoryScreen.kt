@@ -39,11 +39,7 @@ import tracker2.composeapp.generated.resources.history
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun HistoryScreen(
-    applicationState: ApplicationState,
-    modifier: Modifier = Modifier,
-    viewModel: HistoryScreenViewModel = koinViewModel()
-) {
+fun HistoryScreen(applicationState: ApplicationState, modifier: Modifier = Modifier, viewModel: HistoryScreenViewModel = koinViewModel()) {
     applicationState.setTitle(stringResource(Res.string.history))
 
     val scope = rememberCoroutineScope()
@@ -61,14 +57,15 @@ fun HistoryScreen(
             PullToRefreshDefaults.LoadingIndicator(
                 refreshState,
                 isRefreshing,
-                modifier = Modifier.align(Alignment.TopCenter))
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
         },
-        modifier = modifier
+        modifier = modifier,
     ) {
         LazyColumnWithScrollButton(applicationState) {
             items(
                 history.itemCount,
-                key = history.itemKey { scrobble -> scrobble.key() }
+                key = history.itemKey { scrobble -> scrobble.key() },
             ) { index ->
                 val entry = history[index]
                 entry?.let {
@@ -83,9 +80,10 @@ fun HistoryScreen(
                                     applicationState.navigate(BottomSheetInfo(track = scrobble.metadata))
                                 },
                                 onDelete = { deletingScrobble = scrobble },
-                                onEdit = { editingScrobble = scrobble }
+                                onEdit = { editingScrobble = scrobble },
                             )
                         }
+
                         is HistoryEntry.Separator -> {
                             DividerWithText(entry.text, modifier = Modifier.padding(5.dp).animateItem())
                         }
@@ -102,7 +100,7 @@ fun HistoryScreen(
                     viewModel.delete(scrobble)
                 }
             },
-            onDismiss = { deletingScrobble = null }
+            onDismiss = { deletingScrobble = null },
         ) {
             Icon(Icons.Filled.Warning, "Warning", modifier = Modifier.size(120.dp))
             Text("Are you sure you want to delete this scrobble?")
@@ -117,7 +115,7 @@ fun HistoryScreen(
                     viewModel.edit(scrobble, track)
                 }
             },
-            onDismiss = { editingScrobble = null }
+            onDismiss = { editingScrobble = null },
         )
     }
 }

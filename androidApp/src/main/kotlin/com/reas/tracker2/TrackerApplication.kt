@@ -11,35 +11,50 @@ class TrackerApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        KotlinLoggingConfiguration.loggerFactory = object : KLoggerFactory {
-            override fun logger(name: String) = object : KLogger {
-                override val name: String
-                    get() = name
+        KotlinLoggingConfiguration.loggerFactory =
+            object : KLoggerFactory {
+                override fun logger(name: String) =
+                    object : KLogger {
+                        override val name: String
+                            get() = name
 
-                override fun isLoggingEnabledFor(
-                    level: Level,
-                    marker: Marker?
-                ): Boolean {
-                    return true
-                }
+                        override fun isLoggingEnabledFor(
+                            level: Level,
+                            marker: Marker?,
+                        ): Boolean = true
 
-                override fun at(
-                    level: Level,
-                    marker: Marker?,
-                    block: KLoggingEventBuilder.() -> Unit
-                ) {
-                    val event = KLoggingEventBuilder().apply(block)
-                    when (level) {
-                        Level.DEBUG -> Log.d(name, event.message, event.cause)
-                        Level.INFO -> Log.i(name, event.message, event.cause)
-                        Level.WARN -> Log.w(name, event.message, event.cause)
-                        Level.ERROR -> Log.e(name, event.message, event.cause)
-                        Level.TRACE -> Log.v(name, event.message, event.cause)
-                        else -> {}
+                        override fun at(
+                            level: Level,
+                            marker: Marker?,
+                            block: KLoggingEventBuilder.() -> Unit,
+                        ) {
+                            val event = KLoggingEventBuilder().apply(block)
+                            when (level) {
+                                Level.DEBUG -> {
+                                    Log.d(name, event.message, event.cause)
+                                }
+
+                                Level.INFO -> {
+                                    Log.i(name, event.message, event.cause)
+                                }
+
+                                Level.WARN -> {
+                                    Log.w(name, event.message, event.cause)
+                                }
+
+                                Level.ERROR -> {
+                                    Log.e(name, event.message, event.cause)
+                                }
+
+                                Level.TRACE -> {
+                                    Log.v(name, event.message, event.cause)
+                                }
+
+                                else -> {}
+                            }
+                        }
                     }
-                }
             }
-        }
 
         startKoin {
             androidLogger()

@@ -9,15 +9,14 @@ import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
 import kotlin.time.Instant
 
-private fun RoutingCall.usernameFromJwt(): String =
-    principal<JWTPrincipal>()!!.payload.getClaim("username").asString()
+private fun RoutingCall.usernameFromJwt(): String = principal<JWTPrincipal>()!!.payload.getClaim("username").asString()
 
 fun Route.apiV1() {
     val api: ApiV1Impl by inject()
     api.setJwtParameters(
         environment.config.property("jwt.secret").getString(),
         environment.config.property("jwt.issuer").getString(),
-        environment.config.property("jwt.audience").getString()
+        environment.config.property("jwt.audience").getString(),
     )
 
     post("/register") {
@@ -68,9 +67,10 @@ fun Route.apiV1() {
                 wrap {
                     val username = call.usernameFromJwt()
                     val clientName = call.requirePathParameter("clientName")
-                    val expiresAt = call.request.queryParameters["expiresAt"]
-                        ?.toLongOrNull()
-                        ?.let { Instant.fromEpochSeconds(it, 0) }
+                    val expiresAt =
+                        call.request.queryParameters["expiresAt"]
+                            ?.toLongOrNull()
+                            ?.let { Instant.fromEpochSeconds(it, 0) }
                     api.addToken(username, clientName, expiresAt)
                 }
             }

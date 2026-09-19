@@ -17,18 +17,16 @@ import com.reas.tracker2.ui.navigation.ApplicationState
 import com.reas.tracker2.ui.navigation.Error
 
 @Composable
-fun ErrorDialog(
-    arguments: Error,
-    applicationState: ApplicationState,
-    modifier: Modifier = Modifier
-) {
+fun ErrorDialog(arguments: Error, applicationState: ApplicationState, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxWidth().background(
-            color = MaterialTheme.colorScheme.errorContainer,
-            shape = MaterialTheme.shapes.medium
-        ).padding(16.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = MaterialTheme.shapes.medium,
+            ).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("Error", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.headlineLarge)
         Text(arguments.message, modifier = Modifier.fillMaxWidth())
@@ -36,8 +34,8 @@ fun ErrorDialog(
             onClick = { applicationState.goBack() },
             colors = ButtonDefaults.buttonColors(
                 contentColor = MaterialTheme.colorScheme.onError,
-                containerColor = MaterialTheme.colorScheme.error
-            )
+                containerColor = MaterialTheme.colorScheme.error,
+            ),
         ) {
             Text("OK")
         }

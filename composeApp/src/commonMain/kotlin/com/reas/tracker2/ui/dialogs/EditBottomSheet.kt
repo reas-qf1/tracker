@@ -31,14 +31,14 @@ fun TextFieldWithRevertButton(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         OutlinedTextField(
             value = value,
             onValueChange = onChange,
             label = label,
             supportingText = supportingText,
-            modifier = Modifier.weight(1.0F)
+            modifier = Modifier.weight(1.0F),
         )
         IconButton(
             enabled = value != initialValue,
@@ -61,42 +61,44 @@ fun EditDialog(
     var artists by state(scrobble.artistsAsString)
     var album by state(scrobble.album ?: "")
     var albumArtists by state(
-        if (scrobble.albumArtistsAsString != null && scrobble.albumArtistsAsString != scrobble.artistsAsString)
+        if (scrobble.albumArtistsAsString != null && scrobble.albumArtistsAsString != scrobble.artistsAsString) {
             scrobble.albumArtistsAsString!!
-        else ""
+        } else {
+            ""
+        },
     )
 
     val canSave by derivedState { track.isNotEmpty() && artists.isNotEmpty() }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        modifier = modifier
+        modifier = modifier,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             TextFieldWithRevertButton(
                 value = track,
                 onChange = { track = it },
-                label = { Text("Track") }
+                label = { Text("Track") },
             )
             TextFieldWithRevertButton(
                 value = artists,
                 onChange = { artists = it },
-                label = { Text("Artist(s)") }
+                label = { Text("Artist(s)") },
             )
             TextFieldWithRevertButton(
                 value = album,
                 onChange = { album = it },
-                label = { Text("Album") }
+                label = { Text("Album") },
             )
             TextFieldWithRevertButton(
                 value = albumArtists,
                 onChange = { albumArtists = it },
                 label = { Text("Album artist(s)") },
-                supportingText = { Text("Will be equal to track artist(s) if left empty") }
+                supportingText = { Text("Will be equal to track artist(s) if left empty") },
             )
 
             ConfirmRow(
@@ -111,7 +113,7 @@ fun EditDialog(
                     )
                     onSave(track)
                 },
-                onDismiss = { onDismiss() }
+                onDismiss = { onDismiss() },
             )
         }
     }

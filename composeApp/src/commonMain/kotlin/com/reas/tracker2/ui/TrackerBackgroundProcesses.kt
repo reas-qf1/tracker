@@ -7,9 +7,7 @@ import com.reas.tracker2.shared.HolePlugger
 import org.koin.compose.koinInject
 
 @Composable
-fun TrackerBackgroundProcesses(
-    onError: suspend (String) -> Unit,
-) {
+fun TrackerBackgroundProcesses(onError: suspend (String) -> Unit) {
     val repository: Repository = koinInject()
     val holePlugger: HolePlugger = koinInject()
 

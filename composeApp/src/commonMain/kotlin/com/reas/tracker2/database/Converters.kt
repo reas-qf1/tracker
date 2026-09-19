@@ -9,7 +9,6 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-
 class Converters {
     @ColumnTypeConverter
     fun eventInfoListToString(list: MutableList<EventInfo>): String = Json.encodeToString(list)

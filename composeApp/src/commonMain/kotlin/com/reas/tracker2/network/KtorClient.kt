@@ -16,22 +16,25 @@ private object KtorClient {
     val logger = KotlinLogging.logger {}
 }
 
-fun httpClient() = HttpClient(CIO) {
-    install(HttpCache)
-    install(ContentNegotiation) {
-        json(Json {
-            ignoreUnknownKeys = true
-        })
-    }
-    install(Logging) {
-        logger = object: Logger {
-            override fun log(message: String) {
-                KtorClient.logger.trace { message }
+fun httpClient() =
+    HttpClient(CIO) {
+        install(HttpCache)
+        install(ContentNegotiation) {
+            json(
+                Json {
+                    ignoreUnknownKeys = true
+                },
+            )
+        }
+        install(Logging) {
+            logger = object : Logger {
+                override fun log(message: String) {
+                    KtorClient.logger.trace { message }
+                }
             }
         }
+        install(WebSockets) {
+            pingInterval = 15.seconds
+            contentConverter = KotlinxWebsocketSerializationConverter(Json)
+        }
     }
-    install(WebSockets) {
-        pingInterval = 15.seconds
-        contentConverter = KotlinxWebsocketSerializationConverter(Json)
-    }
-}

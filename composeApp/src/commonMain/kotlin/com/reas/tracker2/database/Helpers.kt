@@ -13,15 +13,16 @@ data class AlbumWithData(
     @Relation(
         parentColumns = ["albumId"],
         entityColumns = ["artistId"],
-        associateBy = Junction(AlbumArtistCrossRef::class)
+        associateBy = Junction(AlbumArtistCrossRef::class),
     )
-    val artists: List<ArtistEntity>
+    val artists: List<ArtistEntity>,
 ) {
-    fun toAlbum() = Album(
-        id = album.albumId,
-        name = album.name,
-        artists = ArtistList(artists.map { Artist(it.name, it.artistId) }, album.artists),
-    )
+    fun toAlbum() =
+        Album(
+            id = album.albumId,
+            name = album.name,
+            artists = ArtistList(artists.map { Artist(it.name, it.artistId) }, album.artists),
+        )
 }
 
 data class TrackWithData(
@@ -29,24 +30,25 @@ data class TrackWithData(
     @Relation(
         parentColumns = ["trackId"],
         entityColumns = ["artistId"],
-        associateBy = Junction(TrackArtistCrossRef::class)
+        associateBy = Junction(TrackArtistCrossRef::class),
     )
     val artists: List<ArtistEntity>,
     @Relation(
         entity = AlbumEntity::class,
         parentColumns = ["albumId"],
-        entityColumns = ["albumId"]
+        entityColumns = ["albumId"],
     )
-    val album: AlbumWithData?
+    val album: AlbumWithData?,
 ) {
-    fun toTrack() = TrackWithAlbum(
-        trackObject = Track(
-            id = track.trackId,
-            name = track.name,
-            artists = ArtistList(artists.map { Artist(it.name, it.artistId) }, track.artists)
-        ),
-        albumObject = album?.toAlbum()
-    )
+    fun toTrack() =
+        TrackWithAlbum(
+            trackObject = Track(
+                id = track.trackId,
+                name = track.name,
+                artists = ArtistList(artists.map { Artist(it.name, it.artistId) }, track.artists),
+            ),
+            albumObject = album?.toAlbum(),
+        )
 }
 
 data class PlayWithData(
@@ -59,22 +61,22 @@ data class PlayWithData(
     var lastPlaying: Boolean,
     val sourceDevice: String,
     val sourceApp: String,
-    val associatedEvents: MutableList<EventInfo>
+    val associatedEvents: MutableList<EventInfo>,
 )
 
 data class ArtistWithPlayCount(
     @Embedded val artist: Artist,
-    val playCount: Int
+    val playCount: Int,
 )
 
 data class ArtistWithTimePlayed(
     @Embedded val artist: Artist,
-    val timePlayed: Duration
+    val timePlayed: Duration,
 )
 
 data class TrackWithPlayCount(
     @Embedded val _track: TrackWithData,
-    val playCount: Int
+    val playCount: Int,
 ) {
     val track: TrackWithAlbum
         get() = _track.toTrack()
@@ -82,7 +84,7 @@ data class TrackWithPlayCount(
 
 data class TrackWithTimePlayed(
     @Embedded val _track: TrackWithData,
-    val timePlayed: Duration
+    val timePlayed: Duration,
 ) {
     val track: TrackWithAlbum
         get() = _track.toTrack()
@@ -90,7 +92,7 @@ data class TrackWithTimePlayed(
 
 data class AlbumWithPlayCount(
     @Embedded val _album: AlbumWithData,
-    val playCount: Int
+    val playCount: Int,
 ) {
     val album: Album
         get() = _album.toAlbum()
@@ -98,7 +100,7 @@ data class AlbumWithPlayCount(
 
 data class AlbumWithTimePlayed(
     @Embedded val _album: AlbumWithData,
-    val timePlayed: Duration
+    val timePlayed: Duration,
 ) {
     val album: Album
         get() = _album.toAlbum()

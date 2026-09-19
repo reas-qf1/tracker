@@ -3,7 +3,6 @@ package com.reas.tracker2.ui.navigation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -26,10 +25,15 @@ class ApplicationStateData(
 
 interface ApplicationState {
     fun navigate(route: Route)
+
     fun goBack()
+
     fun canNavigateBack(): Boolean
+
     fun currentTab(): Int
+
     fun getTitle(): String
+
     fun setTitle(title: String)
 
     suspend fun snackbar(
@@ -38,18 +42,16 @@ interface ApplicationState {
         withDismissAction: Boolean = false,
         duration: SnackbarDuration = SnackbarDuration.Indefinite,
         onAction: () -> Unit = {},
-        onDismiss: () -> Unit = {}
+        onDismiss: () -> Unit = {},
     )
 
     @Composable
-    fun floatingActionButton(
-        onClick: () -> Unit = {},
-        visibleIf: Boolean = true,
-        content: @Composable () -> Unit,
-    )
+    fun FloatingActionButton(onClick: () -> Unit = {}, visibleIf: Boolean = true, content: @Composable () -> Unit)
 }
 
-class TrackerApplicationState(val state: ApplicationStateData) : ApplicationState {
+class TrackerApplicationState(
+    val state: ApplicationStateData,
+) : ApplicationState {
     override fun navigate(route: Route) {
         if (state.backStack.last() is DialogRoute) {
             state.backStack.removeLastOrNull()
@@ -58,12 +60,12 @@ class TrackerApplicationState(val state: ApplicationStateData) : ApplicationStat
     }
 
     override fun goBack() {
-        if (state.backStack.size > 1)
+        if (state.backStack.size > 1) {
             state.backStack.removeLastOrNull()
+        }
     }
 
-    override fun canNavigateBack() =
-        state.backStack.filter { it !is DialogRoute }.size > 1
+    override fun canNavigateBack() = state.backStack.filter { it !is DialogRoute }.size > 1
 
     override fun currentTab(): Int =
         when (state.backStack.last { it !is DialogRoute }) {
@@ -92,7 +94,7 @@ class TrackerApplicationState(val state: ApplicationStateData) : ApplicationStat
         withDismissAction: Boolean,
         duration: SnackbarDuration,
         onAction: () -> Unit,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {
         val result = state.snackbarHostState.showSnackbar(message, actionLabel, withDismissAction, duration)
         when (result) {
@@ -102,18 +104,14 @@ class TrackerApplicationState(val state: ApplicationStateData) : ApplicationStat
     }
 
     @Composable
-    override fun floatingActionButton(
-        onClick: () -> Unit,
-        visibleIf: Boolean,
-        content: @Composable (() -> Unit),
-    ) {
+    override fun FloatingActionButton(onClick: () -> Unit, visibleIf: Boolean, content: @Composable (() -> Unit)) {
         state.floatingButtonContents.value = content
         state.floatingButtonOnClick.value = onClick
         state.isFloatingButtonVisible.value = visibleIf
     }
 
     @Composable
-    fun showActionButton() {
+    fun ActionButton() {
         AnimatedVisibility(
             visible = state.isFloatingButtonVisible.value,
             enter = fadeIn(),
@@ -121,19 +119,23 @@ class TrackerApplicationState(val state: ApplicationStateData) : ApplicationStat
         ) {
             FloatingActionButton(
                 onClick = state.floatingButtonOnClick.value,
-                content = state.floatingButtonContents.value
+                content = state.floatingButtonContents.value,
             )
         }
     }
 }
 
-
 class PreviewApplicationState : ApplicationState {
     override fun navigate(route: Route) {}
+
     override fun goBack() {}
+
     override fun canNavigateBack() = true
+
     override fun currentTab() = 0
+
     override fun getTitle() = "Preview"
+
     override fun setTitle(title: String) {}
 
     override suspend fun snackbar(
@@ -142,25 +144,18 @@ class PreviewApplicationState : ApplicationState {
         withDismissAction: Boolean,
         duration: SnackbarDuration,
         onAction: () -> Unit,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {}
 
     @Composable
-    override fun floatingActionButton(
-        onClick: () -> Unit,
-        visibleIf: Boolean,
-        content: @Composable (() -> Unit),
-    ) {}
+    override fun FloatingActionButton(onClick: () -> Unit, visibleIf: Boolean, content: @Composable (() -> Unit)) {}
 }
 
 @Composable
-fun rememberBackStack(startRoute: Route) =
-    rememberSerializable(serializer = serializer()) { NavBackStack(startRoute) }
+fun rememberBackStack(startRoute: Route) = rememberSerializable(serializer = serializer()) { NavBackStack(startRoute) }
 
 @Composable
-fun rememberApplicationState(
-    backStack: NavBackStack<Route>,
-): TrackerApplicationState {
+fun rememberApplicationState(backStack: NavBackStack<Route>): TrackerApplicationState {
     val title = state("")
     val snackbarHostState = remember { SnackbarHostState() }
     val isFloatingButtonVisible = state(false)
@@ -168,13 +163,15 @@ fun rememberApplicationState(
     val floatingButtonOnClick = state({})
 
     return remember {
-        TrackerApplicationState(ApplicationStateData(
-            backStack = backStack,
-            title = title,
-            snackbarHostState = snackbarHostState,
-            isFloatingButtonVisible = isFloatingButtonVisible,
-            floatingButtonContents = floatingButtonContents,
-            floatingButtonOnClick = floatingButtonOnClick,
-        ))
+        TrackerApplicationState(
+            ApplicationStateData(
+                backStack = backStack,
+                title = title,
+                snackbarHostState = snackbarHostState,
+                isFloatingButtonVisible = isFloatingButtonVisible,
+                floatingButtonContents = floatingButtonContents,
+                floatingButtonOnClick = floatingButtonOnClick,
+            ),
+        )
     }
 }

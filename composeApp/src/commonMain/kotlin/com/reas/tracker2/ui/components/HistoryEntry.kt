@@ -33,10 +33,12 @@ fun HistoryEntry(
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
 ) {
-    val bgColor = if (play.isNowPlaying)
-        MaterialTheme.colorScheme.surfaceContainerHighest
-    else
-        MaterialTheme.colorScheme.surfaceContainer
+    val bgColor =
+        if (play.isNowPlaying) {
+            MaterialTheme.colorScheme.surfaceContainerHighest
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        }
 
     var menuExpanded by state(false)
 
@@ -44,7 +46,7 @@ fun HistoryEntry(
         backgroundColor = bgColor,
         dynamicColor = true,
         url = imageUrl,
-        modifier = modifier.clickable(onClick = onClick)
+        modifier = modifier.clickable(onClick = onClick),
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -54,7 +56,7 @@ fun HistoryEntry(
                     baselineHeight = 22.5.dp,
                     style = Typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1.0F)
+                    modifier = Modifier.weight(1.0F),
                 )
                 Spacer(Modifier.width(5.dp))
 
@@ -66,31 +68,33 @@ fun HistoryEntry(
                             "Debug",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.clickable(
-                                onClick = { debugInfoExpanded = !debugInfoExpanded }
-                            )
+                                onClick = { debugInfoExpanded = !debugInfoExpanded },
+                            ),
                         )
                         DropdownMenu(
                             expanded = debugInfoExpanded,
-                            onDismissRequest = { debugInfoExpanded = false }
+                            onDismissRequest = { debugInfoExpanded = false },
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Time played: ${play.timePlayed}") },
-                                onClick = {}
+                                onClick = {},
                             )
                             DropdownMenuItem(
                                 text = { Text("Associated events: ") },
-                                onClick = {}
+                                onClick = {},
                             )
                             play.associatedEvents.forEach { event ->
                                 DropdownMenuItem(
-                                    text = { Text(
-                                        """
-                                        ${event.timestamp}
-                                            ${event.position}
-                                            ${event.state}
-                                    """.trimIndent()
-                                    ) },
-                                    onClick = {}
+                                    text = {
+                                        Text(
+                                            """
+                                            ${event.timestamp}
+                                                ${event.position}
+                                                ${event.state}
+                                            """.trimIndent(),
+                                        )
+                                    },
+                                    onClick = {},
                                 )
                             }
                         }
@@ -103,12 +107,12 @@ fun HistoryEntry(
                         "More",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.clickable(
-                            onClick = { menuExpanded = !menuExpanded }
-                        )
+                            onClick = { menuExpanded = !menuExpanded },
+                        ),
                     )
                     DropdownMenu(
                         expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
+                        onDismissRequest = { menuExpanded = false },
                     ) {
                         DropdownMenuItem(
                             leadingIcon = {
@@ -118,7 +122,7 @@ fun HistoryEntry(
                             onClick = {
                                 menuExpanded = false
                                 onEdit()
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             leadingIcon = {
@@ -128,7 +132,7 @@ fun HistoryEntry(
                             onClick = {
                                 menuExpanded = false
                                 onDelete()
-                            }
+                            },
                         )
                     }
                 }
@@ -159,19 +163,19 @@ fun HistoryEntry(
                     modifier = Modifier
                         .fillMaxHeight()
                         .padding(bottom = 3.dp),
-                    verticalArrangement = Arrangement.Bottom
+                    verticalArrangement = Arrangement.Bottom,
                 ) {
-                    if (play.isNowPlaying)
+                    if (play.isNowPlaying) {
                         Icon(
                             Icons.Filled.PlayArrow,
                             stringResource(Res.string.now_playing),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.primary,
                         )
-                    else {
+                    } else {
                         Timestamp(
                             play.timestamp,
                             style = Typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.secondary,
                         )
                     }
                 }

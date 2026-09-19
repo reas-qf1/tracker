@@ -35,23 +35,22 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-private fun Modifier.firstBaselineToTop(
-    firstBaselineToTop: Dp,
-) = layout { measurable, constraints ->
-    // Measure the composable
-    val placeable = measurable.measure(constraints)
+private fun Modifier.firstBaselineToTop(firstBaselineToTop: Dp) =
+    layout { measurable, constraints ->
+        // Measure the composable
+        val placeable = measurable.measure(constraints)
 
-    // Check the composable has a first baseline
-    check(placeable[FirstBaseline] != AlignmentLine.Unspecified)
-    val firstBaseline = placeable[FirstBaseline]
+        // Check the composable has a first baseline
+        check(placeable[FirstBaseline] != AlignmentLine.Unspecified)
+        val firstBaseline = placeable[FirstBaseline]
 
-    // Height of the composable with padding - first baseline
-    val placeableY = firstBaselineToTop.roundToPx() - firstBaseline
-    layout(placeable.width, placeable.height) {
-        // Where the composable gets placed
-        placeable.placeRelative(0, placeableY)
+        // Height of the composable with padding - first baseline
+        val placeableY = firstBaselineToTop.roundToPx() - firstBaseline
+        layout(placeable.width, placeable.height) {
+            // Where the composable gets placed
+            placeable.placeRelative(0, placeableY)
+        }
     }
-}
 
 @Composable
 fun ConstrainedText(
@@ -63,18 +62,18 @@ fun ConstrainedText(
     style: TextStyle = LocalTextStyle.current,
 ) {
     Box(
-        modifier = modifier.height(height).wrapContentHeight(align = Alignment.Top, unbounded = true)
+        modifier = modifier.height(height).wrapContentHeight(align = Alignment.Top, unbounded = true),
     ) {
         Text(
             text,
             style = style,
             color = color,
-            maxLines = 1, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.firstBaselineToTop(baselineHeight)
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.firstBaselineToTop(baselineHeight),
         )
     }
 }
-
 
 @Composable
 fun AutosizingText(
@@ -89,11 +88,10 @@ fun AutosizingText(
         color = color,
         autoSize = TextAutoSize.StepBased(maxFontSize = style.fontSize),
         maxLines = 1,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Timestamp(
     timestamp: Instant,
@@ -108,12 +106,12 @@ fun Timestamp(
         tooltip = {
             PlainTooltip(
                 containerColor = MaterialTheme.colorScheme.background,
-                contentColor = MaterialTheme.colorScheme.secondary
+                contentColor = MaterialTheme.colorScheme.secondary,
             ) {
                 Text(timestamp.printLong())
             }
         },
-        state = tooltipState
+        state = tooltipState,
     ) {
         var difference by state(Clock.System.now() - timestamp)
         val showSeconds by derivedState {
@@ -132,63 +130,76 @@ fun Timestamp(
             difference >= 30.days
         }
 
-        val text = if (showSeconds) {
-            stringResource(Res.string.seconds_ago, difference.inWholeSeconds)
-        } else if (showMinutes) {
-            stringResource(Res.string.minutes_ago, difference.inWholeMinutes)
-        } else if (showHours) {
-            stringResource(Res.string.hours_ago, difference.inWholeHours)
-        } else if (showDays) {
-            stringResource(Res.string.days_ago, difference.inWholeDays)
-        } else {
-            timestamp.printShort()
-        }
+        val text =
+            if (showSeconds) {
+                stringResource(Res.string.seconds_ago, difference.inWholeSeconds)
+            } else if (showMinutes) {
+                stringResource(Res.string.minutes_ago, difference.inWholeMinutes)
+            } else if (showHours) {
+                stringResource(Res.string.hours_ago, difference.inWholeHours)
+            } else if (showDays) {
+                stringResource(Res.string.days_ago, difference.inWholeDays)
+            } else {
+                timestamp.printShort()
+            }
+
         Text(
             text,
             modifier = modifier.clickable(onClick = {
                 scope.launch { tooltipState.show() }
             }),
             style = style,
-            color = color
+            color = color,
         )
 
         if (!showDate) {
             LaunchedEffect(difference) {
-                if (showSeconds)
+                if (showSeconds) {
                     delay((difference.inWholeSeconds + 1).seconds - difference)
-                if (showMinutes)
+                }
+                if (showMinutes) {
                     delay((difference.inWholeMinutes + 1).minutes - difference)
-                if (showHours)
+                }
+                if (showHours) {
                     delay((difference.inWholeHours + 1).hours - difference)
-                if (showDays)
+                }
+                if (showDays) {
                     delay((difference.inWholeDays + 1).days - difference)
+                }
                 difference = Clock.System.now() - timestamp
             }
         }
     }
 }
 
-fun Instant.printShort() = this.format(DateTimeComponents.Format {
-    monthName(MonthNames.ENGLISH_ABBREVIATED)
-    char(' ')
-    day()
-    char(',')
-    char(' ')
-    year()
-}, offset = TimeZone.currentSystemDefault().offsetAt(this))
+fun Instant.printShort() =
+    this.format(
+        DateTimeComponents.Format {
+            monthName(MonthNames.ENGLISH_ABBREVIATED)
+            char(' ')
+            day()
+            char(',')
+            char(' ')
+            year()
+        },
+        offset = TimeZone.currentSystemDefault().offsetAt(this),
+    )
 
-
-fun Instant.printLong() = this.format(DateTimeComponents.Format {
-    monthName(MonthNames.ENGLISH_FULL)
-    char(' ')
-    day()
-    char(',')
-    char(' ')
-    year()
-    char(' ')
-    hour()
-    char(':')
-    minute()
-    char(':')
-    second()
-}, offset = TimeZone.currentSystemDefault().offsetAt(this))
+fun Instant.printLong() =
+    this.format(
+        DateTimeComponents.Format {
+            monthName(MonthNames.ENGLISH_FULL)
+            char(' ')
+            day()
+            char(',')
+            char(' ')
+            year()
+            char(' ')
+            hour()
+            char(':')
+            minute()
+            char(':')
+            second()
+        },
+        offset = TimeZone.currentSystemDefault().offsetAt(this),
+    )

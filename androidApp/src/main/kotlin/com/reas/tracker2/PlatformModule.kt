@@ -14,15 +14,16 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
-val platformModule = module {
-    singleOf(::PlatformDependentPathsAndroid) bind PlatformDependentPaths::class
-    singleOf(::NowPlayingNotificationManagerAndroid) bind NowPlayingNotificationManager::class
-    singleOf(::getDatabaseBuilder)
-    single {
-        NotificationWrapper(
-            get(),
-            get<Context>().getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        )
+val platformModule =
+    module {
+        singleOf(::PlatformDependentPathsAndroid) bind PlatformDependentPaths::class
+        singleOf(::NowPlayingNotificationManagerAndroid) bind NowPlayingNotificationManager::class
+        singleOf(::getDatabaseBuilder)
+        single {
+            NotificationWrapper(
+                get(),
+                get<Context>().getSystemService(NOTIFICATION_SERVICE) as NotificationManager,
+            )
+        }
+        singleOf(::MediaEventRelay)
     }
-    singleOf(::MediaEventRelay)
-}

@@ -14,12 +14,18 @@ class InMemoryLog {
 
     private val logs = mutableMapOf<String, MutableSharedFlow<String>>()
 
-    operator fun get(tag: String) = logs.getOrPut(tag) {
-        MutableSharedFlow(replay = DEFAULT_CAPACITY, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    }
+    operator fun get(tag: String) =
+        logs.getOrPut(tag) {
+            MutableSharedFlow(replay = DEFAULT_CAPACITY, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+        }
 
     suspend fun log(tag: String, message: () -> String) {
         if (!IS_DEBUG) return
-        get(tag).emit(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toString() + " " + message())
+        get(tag).emit(
+            Clock.System
+                .now()
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+                .toString() + " " + message(),
+        )
     }
 }

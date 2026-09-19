@@ -25,23 +25,33 @@ class MediaEventRelay(
     private var lastEvent: Event? = null
     private val lock = Mutex()
 
-    fun filter(event: Event, lastEvent: Event?): Boolean {
-        if (lastEvent == null && !event.isPlaying)
+    fun filter(
+        event: Event,
+        lastEvent: Event?,
+    ): Boolean {
+        if (lastEvent == null && !event.isPlaying) {
             return false
+        }
         if (lastEvent != null) {
-            if (!lastEvent.isPlaying && !event.isPlaying)
+            if (!lastEvent.isPlaying && !event.isPlaying) {
                 return false
-            if (lastEvent.isPlaying && event.isPlaying
-                && lastEvent.metadata == event.metadata
-                && event.speed == lastEvent.speed
-                && ((event.timestamp - lastEvent.timestamp) * event.speed - (event.position - lastEvent.position)).absoluteValue < GRACE_PERIOD) {
+            }
+            if (lastEvent.isPlaying && event.isPlaying &&
+                lastEvent.metadata == event.metadata &&
+                event.speed == lastEvent.speed &&
+                ((event.timestamp - lastEvent.timestamp) * event.speed - (event.position - lastEvent.position)).absoluteValue <
+                GRACE_PERIOD
+            ) {
                 return false
             }
         }
         return true
     }
 
-    fun map(event: Event, lastEvent: Event?): Event {
+    fun map(
+        event: Event,
+        lastEvent: Event?,
+    ): Event {
         var newEvent = event
         if (event.isPlaying && event.position < EventProcessor.SKIP_MIN_DURATION) {
             newEvent = newEvent.copy(info = newEvent.info.copy(position = Duration.ZERO))
@@ -49,26 +59,34 @@ class MediaEventRelay(
         return newEvent
     }
 
-    suspend fun process(appId: String, timestamp: Long, metadata: MediaMetadata?, state: PlaybackState?) {
-        if (metadata == null || state == null)
+    suspend fun process(
+        appId: String,
+        timestamp: Long,
+        metadata: MediaMetadata?,
+        state: PlaybackState?,
+    ) {
+        if (metadata == null || state == null) {
             return
-        if (metadata.artist.isNullOrBlank() || metadata.title.isNullOrBlank() || state.state == PlaybackState.STATE_NONE)
+        }
+        if (metadata.artist.isNullOrBlank() || metadata.title.isNullOrBlank() || state.state == PlaybackState.STATE_NONE) {
             return
+        }
 
         val isPlaying = state.state == PlaybackState.STATE_PLAYING
 
-        val event = Event.create(
-            track = metadata.title!!,
-            artists = metadata.artist!!,
-            album = metadata.album,
-            albumArtists = metadata.albumArtist ?: metadata.artist,
-            duration = metadata.duration,
-            timestamp = timestamp,
-            position = state.position,
-            state = if (isPlaying) EventState.PLAYING else EventState.STOPPED,
-            speed = state.playbackSpeed.toDouble(),
-            source = Source.local(appId)
-        )
+        val event =
+            Event.create(
+                track = metadata.title!!,
+                artists = metadata.artist!!,
+                album = metadata.album,
+                albumArtists = metadata.albumArtist ?: metadata.artist,
+                duration = metadata.duration,
+                timestamp = timestamp,
+                position = state.position,
+                state = if (isPlaying) EventState.PLAYING else EventState.STOPPED,
+                speed = state.playbackSpeed.toDouble(),
+                source = Source.local(appId),
+            )
 
         lock.withLock {
             if (!filter(event, lastEvent)) {

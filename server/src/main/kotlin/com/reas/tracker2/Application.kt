@@ -24,7 +24,10 @@ fun main(args: Array<String>) {
 }
 
 @Serializable
-data class UserPrincipal(val username: String, val clientName: String)
+data class UserPrincipal(
+    val username: String,
+    val clientName: String,
+)
 
 fun Application.installPlugins() {
     val authRepository: AuthRepository by inject()
@@ -42,10 +45,26 @@ fun Application.installPlugins() {
     }
     install(Authentication) {
         jwt("auth-jwt") {
-            val secret = this@installPlugins.environment.config.property("jwt.secret").getString()
-            val issuer = this@installPlugins.environment.config.property("jwt.issuer").getString()
-            val audience = this@installPlugins.environment.config.property("jwt.audience").getString()
-            val realm_ = this@installPlugins.environment.config.property("jwt.realm").getString()
+            val secret =
+                this@installPlugins
+                    .environment.config
+                    .property("jwt.secret")
+                    .getString()
+            val issuer =
+                this@installPlugins
+                    .environment.config
+                    .property("jwt.issuer")
+                    .getString()
+            val audience =
+                this@installPlugins
+                    .environment.config
+                    .property("jwt.audience")
+                    .getString()
+            val realm_ =
+                this@installPlugins
+                    .environment.config
+                    .property("jwt.realm")
+                    .getString()
 
             realm = realm_
             verifier(issuer, audience, Algorithm.HMAC256(secret))
