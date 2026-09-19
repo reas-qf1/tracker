@@ -7,18 +7,19 @@ import kotlin.time.Clock
 
 class HolePlugger(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-    private val clock: Clock = Clock.System
+    private val clock: Clock = Clock.System,
 ) {
-
     private val plugJobs = mutableMapOf<String, Job>()
     private val playFlow = MutableSharedFlow<Play>()
 
     fun register(play: Play) {
-        if (!play.lastPlaying)
+        if (!play.lastPlaying) {
             return
+        }
         val key = play.key
-        if (plugJobs.containsKey(key))
+        if (plugJobs.containsKey(key)) {
             cancel(play)
+        }
         val delayTime = play.duration - play.lastPosition - (clock.now() - play.lastTimestamp)
         logger.debug { "launching job to plug hole for $key in $delayTime" }
         plugJobs[key] = scope.launch {

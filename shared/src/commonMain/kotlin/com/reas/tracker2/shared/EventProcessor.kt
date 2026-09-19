@@ -4,7 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.time.Duration.Companion.seconds
 
 class EventProcessor(
-    private val adapter: EventProcessorAdapter
+    private val adapter: EventProcessorAdapter,
 ) {
     companion object {
         val SKIP_MIN_DURATION = 2.seconds
@@ -49,8 +49,9 @@ class EventProcessor(
     private fun MutableList<Play>.applyTemporaryEditAndAdd(play: Play) {
         val temporaryEdit = temporaryEdits[play.source]
         if (temporaryEdit != null) {
-            if (temporaryEdit.second != null)
+            if (temporaryEdit.second != null) {
                 this.add(play.copy(metadata = temporaryEdit.second!!))
+            }
         } else {
             this.add(play)
         }
@@ -79,7 +80,7 @@ class EventProcessor(
         if (play != null && eventsSorted[0].timestamp < play.timestamp) {
             logger.error {
                 "ERROR: out-of-sync events source=$source " +
-                        "eventTimestamp=${eventsSorted[0].timestamp} playTimestamp=${play!!.timestamp}"
+                    "eventTimestamp=${eventsSorted[0].timestamp} playTimestamp=${play!!.timestamp}"
             }
             return
         }
@@ -127,21 +128,21 @@ class EventProcessor(
             logger.debug { "finished processing $event" }
         }
 
-        if (play != null)
+        if (play != null) {
             resultPlays.applyTemporaryEditAndAdd(play)
+        }
     }
 
-    private fun isNewPlay(event: Event, lastPlay: Play): Boolean {
-        return if (event.isPlaying) {
+    private fun isNewPlay(event: Event, lastPlay: Play): Boolean =
+        if (event.isPlaying) {
             if (event.position <= SKIP_MIN_DURATION) {
                 event.metadata != lastPlay.metadata ||
-                        lastPlay.lastPosition > SKIP_MIN_DURATION ||
-                        (event.timestamp - lastPlay.lastTimestamp) > SKIP_MIN_DURATION
+                    lastPlay.lastPosition > SKIP_MIN_DURATION ||
+                    (event.timestamp - lastPlay.lastTimestamp) > SKIP_MIN_DURATION
             } else {
                 event.metadata != lastPlay.metadata
             }
         } else {
             event.position <= SKIP_MIN_DURATION && lastPlay.lastPosition > SKIP_MIN_DURATION
         }
-    }
 }

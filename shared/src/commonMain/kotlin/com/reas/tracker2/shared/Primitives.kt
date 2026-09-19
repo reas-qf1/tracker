@@ -11,29 +11,40 @@ import kotlin.time.Instant
 @Serializable
 data class ArtistList(
     val artists: List<Artist>,
-    val raw: String
-): List<Artist> {
+    val raw: String,
+) : List<Artist> {
     constructor(raw: String) : this(
-        raw.split(" & ").map { Artist(it) }, raw
+        raw.split(" & ").map { Artist(it) },
+        raw,
     )
 
     override fun toString(): String = raw
-    override fun equals(other: Any?): Boolean {
-        return other is ArtistList && other.artists == artists
-    }
+
+    override fun equals(other: Any?): Boolean = other is ArtistList && other.artists == artists
+
     override fun hashCode(): Int = artists.hashCode()
 
     override val size: Int
         get() = artists.size
+
     override fun isEmpty(): Boolean = artists.isEmpty()
+
     override fun contains(element: Artist): Boolean = artists.contains(element)
+
     override fun iterator(): Iterator<Artist> = artists.iterator()
+
     override fun containsAll(elements: Collection<Artist>): Boolean = artists.containsAll(elements)
+
     override fun get(index: Int): Artist = artists[index]
+
     override fun indexOf(element: Artist): Int = artists.indexOf(element)
+
     override fun lastIndexOf(element: Artist): Int = artists.lastIndexOf(element)
+
     override fun listIterator(): ListIterator<Artist> = artists.listIterator()
+
     override fun listIterator(index: Int): ListIterator<Artist> = artists.listIterator(index)
+
     override fun subList(fromIndex: Int, toIndex: Int): List<Artist> = artists.subList(fromIndex, toIndex)
 }
 
@@ -42,9 +53,7 @@ data class Artist(
     val name: String,
     @Transient val id: Long = -1,
 ) {
-    override fun equals(other: Any?): Boolean {
-        return other is Artist && name == other.name
-    }
+    override fun equals(other: Any?): Boolean = other is Artist && name == other.name
 }
 
 @Serializable
@@ -55,9 +64,8 @@ data class Album(
 ) {
     val artistsAsString: String
         get() = artists.raw
-    override fun equals(other: Any?): Boolean {
-        return other is Album && name == other.name && artists == other.artists
-    }
+
+    override fun equals(other: Any?): Boolean = other is Album && name == other.name && artists == other.artists
 }
 
 @Serializable
@@ -68,23 +76,22 @@ data class Track(
 ) {
     val artistsAsString: String
         get() = artists.raw
+
     fun withAlbum() = TrackWithAlbum(this, null)
 
-    override fun equals(other: Any?): Boolean {
-        return other is Track && name == other.name && artists == other.artists
-    }
+    override fun equals(other: Any?): Boolean = other is Track && name == other.name && artists == other.artists
 }
 
 @Serializable
 data class TrackWithAlbum(
     private val trackObject: Track,
-    private val albumObject: Album?
+    private val albumObject: Album?,
 ) {
     constructor(track: String, artists: ArtistList, album: String?, albumArtists: ArtistList?) :
-            this(
-                Track(track, artists),
-                album?.let { Album(album, albumArtists ?: artists) }
-            )
+        this(
+            Track(track, artists),
+            album?.let { Album(album, albumArtists ?: artists) },
+        )
 
     val id: Long
         get() = trackObject.id
@@ -124,7 +131,7 @@ data class TrackWithAlbum(
 enum class EventState {
     PLAYING,
     STOPPED,
-    PLUGGED
+    PLUGGED,
 }
 
 @Serializable
@@ -143,7 +150,7 @@ data class Event(
     val metadata: TrackWithAlbum,
     val duration: Duration,
     val info: EventInfo,
-    val source: Source
+    val source: Source,
 ) {
     val track: String
         get() = metadata.name
@@ -185,13 +192,13 @@ data class Event(
             position: Long,
             state: EventState,
             speed: Double,
-            source: Source
+            source: Source,
         ) = Event(
             metadata = TrackWithAlbum(
                 track,
                 ArtistList(artists),
                 album,
-                ArtistList(albumArtists ?: artists)
+                ArtistList(albumArtists ?: artists),
             ),
             duration = duration.milliseconds,
             info = EventInfo(
@@ -200,7 +207,7 @@ data class Event(
                 state = state,
                 speed = speed,
             ),
-            source = source
+            source = source,
         )
     }
 }
@@ -209,10 +216,11 @@ data class Event(
 data class Source(
     val user: String,
     val client: String,
-    val app: String
+    val app: String,
 ) {
     companion object {
         fun user(client: String, app: String) = Source("", client, app)
+
         fun local(app: String) = Source("", "", app)
     }
 }
@@ -225,7 +233,7 @@ data class Play(
     val timestamp: Instant,
     var timePlayed: Duration,
     val source: Source,
-    val associatedEvents: MutableList<EventInfo>
+    val associatedEvents: MutableList<EventInfo>,
 ) {
     val track: String
         get() = metadata.name
@@ -285,31 +293,34 @@ data class Play(
         get() = "$client/$app/$timestamp"
 
     fun plug(timestamp: Instant, position: Duration, speed: Double) {
-        associatedEvents.add(EventInfo(
-            timestamp = timestamp,
-            position = position,
-            speed = speed,
-            state = EventState.PLUGGED,
-        ))
+        associatedEvents.add(
+            EventInfo(
+                timestamp = timestamp,
+                position = position,
+                speed = speed,
+                state = EventState.PLUGGED,
+            ),
+        )
     }
 
     companion object {
-        fun fromEvent(event: Event): Play = Play(
-            id = Random.nextLong(),
-            metadata = event.metadata,
-            duration = event.duration,
-            timestamp = event.timestamp,
-            timePlayed = Duration.ZERO,
-            source = event.source,
-            associatedEvents = mutableListOf(event.info),
-        )
+        fun fromEvent(event: Event): Play =
+            Play(
+                id = Random.nextLong(),
+                metadata = event.metadata,
+                duration = event.duration,
+                timestamp = event.timestamp,
+                timePlayed = Duration.ZERO,
+                source = event.source,
+                associatedEvents = mutableListOf(event.info),
+            )
     }
 }
 
 @Serializable
 data class TimePeriod(
     val start: Instant,
-    val end: Instant
+    val end: Instant,
 ) {
     companion object {
         val ALLTIME = TimePeriod(Instant.DISTANT_PAST, Instant.DISTANT_FUTURE)
