@@ -2,6 +2,8 @@ package com.reas.tracker2
 
 import android.app.Application
 import android.util.Log
+import com.skydoves.snitcher.Snitcher
+import com.skydoves.snitcher.install
 import io.github.oshai.kotlinlogging.*
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -18,16 +20,9 @@ class TrackerApplication : Application() {
                         override val name: String
                             get() = name
 
-                        override fun isLoggingEnabledFor(
-                            level: Level,
-                            marker: Marker?,
-                        ): Boolean = true
+                        override fun isLoggingEnabledFor(level: Level, marker: Marker?): Boolean = true
 
-                        override fun at(
-                            level: Level,
-                            marker: Marker?,
-                            block: KLoggingEventBuilder.() -> Unit,
-                        ) {
+                        override fun at(level: Level, marker: Marker?, block: KLoggingEventBuilder.() -> Unit) {
                             val event = KLoggingEventBuilder().apply(block)
                             when (level) {
                                 Level.DEBUG -> {
@@ -56,6 +51,8 @@ class TrackerApplication : Application() {
                     }
             }
 
+        Snitcher.install(application = this)
+        Snitcher.isDebuggable = true
         startKoin {
             androidLogger()
             androidContext(this@TrackerApplication)

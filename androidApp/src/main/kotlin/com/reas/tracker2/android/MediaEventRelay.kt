@@ -25,10 +25,7 @@ class MediaEventRelay(
     private var lastEvent: Event? = null
     private val lock = Mutex()
 
-    fun filter(
-        event: Event,
-        lastEvent: Event?,
-    ): Boolean {
+    fun filter(event: Event, lastEvent: Event?): Boolean {
         if (lastEvent == null && !event.isPlaying) {
             return false
         }
@@ -48,10 +45,7 @@ class MediaEventRelay(
         return true
     }
 
-    fun map(
-        event: Event,
-        lastEvent: Event?,
-    ): Event {
+    fun map(event: Event, lastEvent: Event?): Event {
         var newEvent = event
         if (event.isPlaying && event.position < EventProcessor.SKIP_MIN_DURATION) {
             newEvent = newEvent.copy(info = newEvent.info.copy(position = Duration.ZERO))
@@ -73,7 +67,6 @@ class MediaEventRelay(
         }
 
         val isPlaying = state.state == PlaybackState.STATE_PLAYING
-
         val event =
             Event.create(
                 track = metadata.title!!,
@@ -97,9 +90,8 @@ class MediaEventRelay(
             val savedEvent = map(event, lastEvent)
             val plays = eventProcessor.process(listOf(savedEvent))
             plays.lastOrNull()?.let { lastPlay ->
-                val processedEvent = savedEvent.copy(metadata = lastPlay.metadata)
+                notificationManager.show(lastPlay)
                 repository.insertPlays(plays)
-                notificationManager.show(processedEvent)
             }
         }
     }

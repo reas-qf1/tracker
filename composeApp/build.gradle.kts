@@ -28,9 +28,9 @@ kotlin {
             enable = true
         }
     }
-    
+
     jvm()
-    
+
     sourceSets {
         commonMain.dependencies {
             implementation(projects.shared)
@@ -81,6 +81,7 @@ kotlin {
             implementation(libs.koin.logger.slf4j)
             implementation(libs.logback)
             implementation(libs.androidx.sqlite.bundled)
+            implementation(libs.snitcher)
         }
     }
 }
@@ -129,9 +130,11 @@ buildConfig {
         }
     }
 
-    val localProperties = Properties().apply {
-        load(rootProject.file("local.properties").inputStream())
-    }
+    val localProperties =
+        Properties().apply {
+            load(rootProject.file("local.properties").inputStream())
+        }
+
     fun secret(name: String, property: String) {
         val value = localProperties.getProperty(property)
         buildConfigField("String?", name, if (value != null) "\"$value\"" else "null")

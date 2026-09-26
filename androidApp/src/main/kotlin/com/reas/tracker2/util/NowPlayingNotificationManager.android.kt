@@ -7,7 +7,6 @@ import com.reas.tracker2.MainActivity
 import com.reas.tracker2.R
 import com.reas.tracker2.android.NotificationBuilder
 import com.reas.tracker2.android.NotificationWrapper
-import com.reas.tracker2.shared.Event
 import com.reas.tracker2.shared.EventInfo
 import com.reas.tracker2.shared.Play
 import com.reas.tracker2.shared.TrackWithAlbum
@@ -15,10 +14,6 @@ import com.reas.tracker2.shared.TrackWithAlbum
 class NowPlayingNotificationManagerAndroid(
     private val notificationManager: NotificationWrapper,
 ) : NowPlayingNotificationManager {
-    override fun show(event: Event) {
-        updateNotification(notificationBuilder(event.metadata, event.info))
-    }
-
     override fun show(play: Play) {
         updateNotification(notificationBuilder(play.metadata, play.lastEvent))
     }
@@ -27,10 +22,7 @@ class NowPlayingNotificationManagerAndroid(
         updateNotification(defaultNotificationBuilder)
     }
 
-    private fun notificationBuilder(
-        metadata: TrackWithAlbum,
-        event: EventInfo,
-    ): NotificationBuilder =
+    private fun notificationBuilder(metadata: TrackWithAlbum, event: EventInfo): NotificationBuilder =
         if (event.isPlaying) {
             { context ->
                 setContentTitle(metadata.name)
@@ -53,13 +45,15 @@ class NowPlayingNotificationManagerAndroid(
             defaultNotificationBuilder
         }
 
-    private val defaultNotificationBuilder: NotificationBuilder = {
-        setContentTitle("Nothing is playing")
-        setSmallIcon(R.drawable.ic_stat_name)
-        setShowWhen(false)
-    }
-
     private fun updateNotification(builder: NotificationBuilder) {
         notificationManager.show("Now Playing", NotificationWrapper.PLAYING_ID, builder)
+    }
+
+    companion object {
+        val defaultNotificationBuilder: NotificationBuilder = {
+            setContentTitle("Nothing is playing")
+            setSmallIcon(R.drawable.ic_stat_name)
+            setShowWhen(false)
+        }
     }
 }

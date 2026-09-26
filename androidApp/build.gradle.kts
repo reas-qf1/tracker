@@ -23,6 +23,7 @@ kotlin {
         implementation(libs.androidx.activity.compose)
         implementation(libs.androidx.activity)
         implementation(libs.androidx.work.runtime)
+        implementation(libs.snitcher)
         implementation(project.dependencies.platform(libs.koin.bom))
         implementation(libs.koin.android)
         implementation(libs.logging)
@@ -31,12 +32,12 @@ kotlin {
         implementation(libs.compose.foundation)
         implementation(libs.androidx.room3.runtime)
         implementation(libs.androidx.paging.common)
-        //testImplementation(libs.junit)
-        //androidTestImplementation(libs.androidx.espresso.core)
-        //androidTestImplementation(project.dependencies.platform(libs.androidx.compose.bom))
-        //androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-        //debugImplementation(libs.androidx.compose.ui.tooling)
-        //debugImplementation(libs.androidx.compose.ui.test.manifest)
+        // testImplementation(libs.junit)
+        // androidTestImplementation(libs.androidx.espresso.core)
+        // androidTestImplementation(project.dependencies.platform(libs.androidx.compose.bom))
+        // androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+        // debugImplementation(libs.androidx.compose.ui.tooling)
+        // debugImplementation(libs.androidx.compose.ui.test.manifest)
     }
 }
 
@@ -70,8 +71,8 @@ android {
     }
     buildTypes {
         getByName("release") {
-            //isShrinkResources = true
-            //isMinifyEnabled = true
+            // isShrinkResources = true
+            // isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("release")
         }
     }

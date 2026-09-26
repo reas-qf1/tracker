@@ -117,7 +117,8 @@ class EventProcessor(
 
             if (isNewPlay) {
                 if (play.lastPlaying) {
-                    play.plug(event.timestamp, event.position, play.lastSpeed)
+                    val position = play.lastPosition + (event.timestamp - play.lastTimestamp) * play.lastSpeed
+                    play.plug(event.timestamp, position, play.lastSpeed)
                 }
                 resultPlays.applyTemporaryEditAndAdd(play)
                 clearTemporaryEdit(play)

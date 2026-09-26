@@ -22,10 +22,10 @@ class NotificationWrapper(
     private val notificationManager: NotificationManager,
 ) {
     companion object {
-        const val PLAYING_ID = 0
+        const val PLAYING_ID = 1
     }
 
-    private var nextId = 1
+    private var nextId = 2
     private val channelDescriptions =
         listOf(
             ChannelDescription("0", "Now Playing", 2),
@@ -56,12 +56,7 @@ class NotificationWrapper(
         }
     }
 
-    fun reserveId() = nextId++
-
-    fun notification(
-        channel: String,
-        params: NotificationBuilder,
-    ): Notification =
+    fun notification(channel: String, params: NotificationBuilder): Notification =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification
                 .Builder(context, channels[channel])
@@ -76,11 +71,7 @@ class NotificationWrapper(
                 }.build()
         }
 
-    fun show(
-        channel: String,
-        id: Int? = null,
-        params: NotificationBuilder,
-    ): Int {
+    fun show(channel: String, id: Int? = null, params: NotificationBuilder): Int {
         if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS,

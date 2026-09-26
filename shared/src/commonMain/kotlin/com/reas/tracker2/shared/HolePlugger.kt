@@ -20,13 +20,13 @@ class HolePlugger(
         if (plugJobs.containsKey(key)) {
             cancel(play)
         }
-        val delayTime = play.duration - play.lastPosition - (clock.now() - play.lastTimestamp)
+        val delayTime = play.endTimestamp - clock.now()
         logger.debug { "launching job to plug hole for $key in $delayTime" }
         plugJobs[key] = scope.launch {
             delay(delayTime)
             logger.debug { "plugging hole for $key" }
             plugJobs.remove(key) // so that no one can cancel us
-            play.timePlayed += play.endTimestamp - play.timestamp
+            play.timePlayed += play.endTimestamp - play.lastTimestamp
             play.plug(play.endTimestamp, play.duration, play.lastSpeed)
             playFlow.emit(play)
         }

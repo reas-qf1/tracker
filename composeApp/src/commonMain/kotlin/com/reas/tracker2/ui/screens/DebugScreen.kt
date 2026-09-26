@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +37,9 @@ fun DebugScreen(applicationState: ApplicationState, modifier: Modifier = Modifie
     Column(modifier = modifier) {
         Text("Total plays: $playCount")
         Text("Event log:")
+        Button(onClick = { throw RuntimeException("Error message") }) {
+            Text("Simulate crash")
+        }
         Text(
             text = mediaEventLog,
             fontSize = MaterialTheme.typography.bodySmall.fontSize,
