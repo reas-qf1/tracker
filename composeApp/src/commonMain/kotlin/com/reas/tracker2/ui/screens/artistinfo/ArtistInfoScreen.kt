@@ -1,4 +1,4 @@
-package com.reas.tracker2.ui.screens
+package com.reas.tracker2.ui.screens.artistinfo
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,10 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.reas.tracker2.shared.TimePeriod
 import com.reas.tracker2.ui.components.*
-import com.reas.tracker2.ui.navigation.AlbumInfo
 import com.reas.tracker2.ui.navigation.ApplicationState
+import com.reas.tracker2.ui.navigation.ArtistInfo
 import com.reas.tracker2.ui.rememberAsState
-import com.reas.tracker2.ui.viewmodels.AlbumInfoScreenViewModel
 import com.reas.tracker2.util.toDisplayString
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -28,28 +27,30 @@ import org.koin.compose.viewmodel.koinViewModel
 import tracker2.composeapp.generated.resources.*
 
 @Composable
-fun AlbumInfoScreen(
-    arguments: AlbumInfo,
+fun ArtistInfoScreen(
+    screen: ArtistInfo,
     applicationState: ApplicationState,
     modifier: Modifier = Modifier,
-    viewModel: AlbumInfoScreenViewModel = koinViewModel(),
+    viewModel: ArtistInfoScreenViewModel = koinViewModel(),
 ) {
-    val album = arguments.album
+    val artist = screen.artist
+
     val sort by viewModel.sort().collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val period = TimePeriod.ALLTIME
 
-    val plays by rememberAsState { viewModel.plays(album, period) }
-    val timePlayed by rememberAsState { viewModel.timePlayed(album, period) }
+    val plays by rememberAsState { viewModel.plays(artist, period) }
+    val timePlayed by rememberAsState { viewModel.timePlayed(artist, period) }
     val playsAsString = if (plays == -1) "..." else plays.toString()
     val timePlayedAsString = timePlayed.toDisplayString()
-    val timeRank by rememberAsState { viewModel.rank(album, period) }
-    val playRank by rememberAsState { viewModel.playRank(album, period) }
+    val timeRank by rememberAsState { viewModel.rank(artist, period) }
+    val playRank by rememberAsState { viewModel.playRank(artist, period) }
 
-    val timeTracks by rememberAsState { viewModel.topTracks(album, period) }
-    val playTracks by rememberAsState { viewModel.topTracksByPlayCount(album, period) }
+    val timeAlbums by rememberAsState { viewModel.topAlbums(artist, period) }
+    val playAlbums by rememberAsState { viewModel.topAlbumsByPlayCount(artist, period) }
+    val timeTracks by rememberAsState { viewModel.topTracks(artist, period) }
+    val playTracks by rememberAsState { viewModel.topTracksByPlayCount(artist, period) }
 
-    applicationState.setTitle("${album.artistsAsString} - ${album.name}")
     Column(
         modifier = modifier.padding(top = 5.dp, start = 5.dp, end = 5.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp),
@@ -62,21 +63,12 @@ fun AlbumInfoScreen(
             ListEntryWithImage(
                 modifier = Modifier.height(125.dp),
                 alignment = Alignment.CenterVertically,
-                url = { viewModel.getAlbumImageUrl(album) },
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                AutosizingText(
+                    artist.name,
+                    style = MaterialTheme.typography.displaySmall,
                     modifier = Modifier.weight(1.0F),
-                ) {
-                    AutosizingText(album.name, style = MaterialTheme.typography.displaySmall)
-                    album.artists.forEach { artist ->
-                        AutosizingText(
-                            artist.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.secondary,
-                        )
-                    }
-                }
+                )
             }
             Spacer(Modifier.height(5.dp))
 
@@ -114,6 +106,21 @@ fun AlbumInfoScreen(
             HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
             InfoChartHeader(
+                stringResource(Res.string.top_albums),
+                onClick = {},
+                modifier = Modifier.padding(top = 5.dp),
+            )
+            DoubleChartColumn(
+                sort.byTime,
+                timeAlbums,
+                playAlbums,
+                onClick = { entry -> applicationState.navigate(entry.infoBottomSheet) },
+            )
+
+            Spacer(Modifier.height(5.dp))
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
+            InfoChartHeader(
                 stringResource(Res.string.top_tracks),
                 onClick = {},
                 modifier = Modifier.padding(top = 5.dp),
@@ -122,7 +129,7 @@ fun AlbumInfoScreen(
                 sort.byTime,
                 timeTracks,
                 playTracks,
-                onClick = { entry -> applicationState.navigate(entry.bottomSheetInfo) },
+                onClick = { entry -> applicationState.navigate(entry.infoBottomSheet) },
             )
 
             Spacer(Modifier.height(5.dp))

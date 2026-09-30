@@ -1,14 +1,12 @@
-package com.reas.tracker2.ui.viewmodels
+package com.reas.tracker2.ui.screens.history
 
 import androidx.paging.PagingData
 import androidx.paging.insertSeparators
 import com.reas.tracker2.database.Repository
 import com.reas.tracker2.network.NetworkRepository
-import com.reas.tracker2.shared.EventProcessor
 import com.reas.tracker2.shared.Play
-import com.reas.tracker2.shared.TrackWithAlbum
+import com.reas.tracker2.ui.TrackerViewModel
 import com.reas.tracker2.ui.components.printShort
-import com.reas.tracker2.util.NowPlayingNotificationManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -31,8 +29,6 @@ sealed class HistoryEntry {
 class HistoryScreenViewModel(
     private val repository: Repository,
     private val networkRepository: NetworkRepository,
-    private val eventProcessor: EventProcessor,
-    private val nowPlayingNotificationManager: NowPlayingNotificationManager,
 ) : TrackerViewModel() {
     val history: Flow<PagingData<HistoryEntry>>
         get() =
@@ -58,20 +54,5 @@ class HistoryScreenViewModel(
             return networkRepository.getAlbumImageUrl(album, "large")
         }
         return null
-    }
-
-    suspend fun delete(play: Play) {
-        if (eventProcessor.addTemporaryEdit(play, null)) {
-            nowPlayingNotificationManager.showDefault()
-        }
-        repository.deletePlay(play)
-    }
-
-    suspend fun edit(play: Play, newMetadata: TrackWithAlbum) {
-        val newScrobble = play.copy(metadata = newMetadata)
-        if (eventProcessor.addTemporaryEdit(play, newMetadata)) {
-            nowPlayingNotificationManager.show(newScrobble)
-        }
-        repository.updatePlay(newScrobble)
     }
 }

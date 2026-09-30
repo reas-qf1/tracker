@@ -1,4 +1,4 @@
-package com.reas.tracker2.ui.screens
+package com.reas.tracker2.ui.screens.debug
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -17,12 +17,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.reas.tracker2.ui.navigation.ApplicationState
+import com.reas.tracker2.ui.navigation.Debug
 import com.reas.tracker2.ui.rememberAsState
-import com.reas.tracker2.ui.viewmodels.DebugScreenViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun DebugScreen(applicationState: ApplicationState, modifier: Modifier = Modifier, viewModel: DebugScreenViewModel = koinViewModel()) {
+fun DebugScreen(
+    screen: Debug,
+    applicationState: ApplicationState,
+    modifier: Modifier = Modifier,
+    viewModel: DebugScreenViewModel = koinViewModel(),
+) {
     val playCount by rememberAsState { viewModel.playCount }
     val mediaEventLog by rememberAsState { viewModel.mediaEventLog }
 
@@ -33,7 +38,6 @@ fun DebugScreen(applicationState: ApplicationState, modifier: Modifier = Modifie
         }
     }
 
-    applicationState.setTitle("Debug")
     Column(modifier = modifier) {
         Text("Total plays: $playCount")
         Text("Event log:")

@@ -1,4 +1,4 @@
-package com.reas.tracker2.ui.viewmodels
+package com.reas.tracker2.ui.screens.albuminfo
 
 import com.reas.tracker2.database.Repository
 import com.reas.tracker2.network.NetworkRepository
@@ -7,9 +7,10 @@ import com.reas.tracker2.settings.chartSort
 import com.reas.tracker2.shared.Album
 import com.reas.tracker2.shared.TimePeriod
 import com.reas.tracker2.shared.TrackWithAlbum
+import com.reas.tracker2.ui.TrackerViewModel
 import com.reas.tracker2.ui.components.ChartEntryUiState
-import com.reas.tracker2.ui.navigation.BottomSheetInfo
 import com.reas.tracker2.ui.navigation.ChartSort
+import com.reas.tracker2.ui.navigation.InfoBottomSheet
 import com.reas.tracker2.util.toDisplayString
 import kotlinx.coroutines.flow.map
 import org.koin.core.time.inMs
@@ -45,7 +46,7 @@ class AlbumInfoScreenViewModel(
                     key = info.toString(),
                     metric = info.timePlayed.inMs,
                     metricAsString = info.timePlayed.toDisplayString(),
-                    bottomSheetInfo = BottomSheetInfo(track = info.track),
+                    infoBottomSheet = InfoBottomSheet(track = info.track),
                     url = { getTrackImageUrl(info.track) },
                 )
             }.asListStateFlow()
@@ -60,7 +61,7 @@ class AlbumInfoScreenViewModel(
                     key = info.toString(),
                     metric = info.playCount.toDouble(),
                     metricAsString = "${info.playCount} plays",
-                    bottomSheetInfo = BottomSheetInfo(track = info.track),
+                    infoBottomSheet = InfoBottomSheet(track = info.track),
                     url = { getTrackImageUrl(info.track) },
                 )
             }.asListStateFlow()

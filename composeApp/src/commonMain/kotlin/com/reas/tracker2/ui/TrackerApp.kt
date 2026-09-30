@@ -8,9 +8,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.reas.tracker2.buildConfig.IS_DEBUG
 import com.reas.tracker2.ui.dialogs.ErrorDialog
-import com.reas.tracker2.ui.dialogs.InfoBottomSheet
+import com.reas.tracker2.ui.dialogs.delete.DeleteDialog
 import com.reas.tracker2.ui.navigation.*
-import com.reas.tracker2.ui.screens.*
+import com.reas.tracker2.ui.screens.albuminfo.AlbumInfoScreen
+import com.reas.tracker2.ui.screens.artistinfo.ArtistInfoScreen
+import com.reas.tracker2.ui.screens.charts.ChartsScreen
+import com.reas.tracker2.ui.screens.debug.DebugScreen
+import com.reas.tracker2.ui.screens.history.HistoryScreen
+import com.reas.tracker2.ui.screens.settings.SettingsScreen
+import com.reas.tracker2.ui.screens.trackhistory.TrackHistoryScreen
+import com.reas.tracker2.ui.screens.trackinfo.TrackInfoScreen
+import com.reas.tracker2.ui.sheets.edit.EditBottomSheet
+import com.reas.tracker2.ui.sheets.info.InfoBottomSheet
 import com.reas.tracker2.ui.theme.TrackerTheme
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -56,44 +65,52 @@ fun TrackerApp(modifier: Modifier = Modifier) {
             },
             modifier = modifier,
         ) {
-            entry<History> {
-                HistoryScreen(applicationState)
+            entry<History> { screen ->
+                HistoryScreen(screen, applicationState)
             }
 
-            entry<TrackHistory> { arguments ->
-                TrackHistoryScreen(arguments, applicationState)
+            entry<TrackHistory> { screen ->
+                TrackHistoryScreen(screen, applicationState)
             }
 
-            entry<Charts> { arguments ->
-                ChartsScreen(arguments, applicationState)
+            entry<Charts> { screen ->
+                ChartsScreen(screen, applicationState)
             }
 
-            entry<Settings> {
-                SettingsScreen(applicationState)
+            entry<Settings> { screen ->
+                SettingsScreen(screen, applicationState)
             }
 
-            entry<Debug> {
-                DebugScreen(applicationState)
+            entry<Debug> { screen ->
+                DebugScreen(screen, applicationState)
             }
 
-            entry<ArtistInfo> { arguments ->
-                ArtistInfoScreen(arguments, applicationState)
+            entry<ArtistInfo> { screen ->
+                ArtistInfoScreen(screen, applicationState)
             }
 
-            entry<AlbumInfo> { arguments ->
-                AlbumInfoScreen(arguments, applicationState)
+            entry<AlbumInfo> { screen ->
+                AlbumInfoScreen(screen, applicationState)
             }
 
-            entry<TrackInfo> { arguments ->
-                TrackInfoScreen(arguments, applicationState)
+            entry<TrackInfo> { screen ->
+                TrackInfoScreen(screen, applicationState)
             }
 
-            dialog<BottomSheetInfo> { arguments ->
-                InfoBottomSheet(arguments, applicationState)
+            bottomSheet<InfoBottomSheet> { screen ->
+                InfoBottomSheet(screen, applicationState)
             }
 
-            dialog<Error> { arguments ->
-                ErrorDialog(arguments, applicationState)
+            bottomSheet<EditBottomSheet> { screen ->
+                EditBottomSheet(screen, applicationState)
+            }
+
+            dialog<Error> { screen ->
+                ErrorDialog(screen, applicationState)
+            }
+
+            dialog<Delete> { screen ->
+                DeleteDialog(screen, applicationState)
             }
         }
     }

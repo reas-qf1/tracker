@@ -1,5 +1,6 @@
-package com.reas.tracker2.ui.viewmodels
+package com.reas.tracker2.ui
 
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.*
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlin.time.Duration
 
 open class TrackerViewModel : ViewModel() {
+    var scrollState: LazyListState = LazyListState()
+
     internal fun <T> Flow<T>.asStateFlow(initialValue: T) =
         stateIn(
             scope = viewModelScope,

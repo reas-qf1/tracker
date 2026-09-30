@@ -13,7 +13,17 @@ import com.reas.tracker2.settings.createDataStore
 import com.reas.tracker2.shared.EventProcessor
 import com.reas.tracker2.shared.EventProcessorAdapter
 import com.reas.tracker2.shared.HolePlugger
-import com.reas.tracker2.ui.viewmodels.*
+import com.reas.tracker2.ui.dialogs.delete.DeleteDialogViewModel
+import com.reas.tracker2.ui.screens.albuminfo.AlbumInfoScreenViewModel
+import com.reas.tracker2.ui.screens.artistinfo.ArtistInfoScreenViewModel
+import com.reas.tracker2.ui.screens.charts.ChartsScreenViewModel
+import com.reas.tracker2.ui.screens.debug.DebugScreenViewModel
+import com.reas.tracker2.ui.screens.history.HistoryScreenViewModel
+import com.reas.tracker2.ui.screens.settings.SettingsScreenViewModel
+import com.reas.tracker2.ui.screens.trackhistory.TrackHistoryViewModel
+import com.reas.tracker2.ui.screens.trackinfo.TrackInfoScreenViewModel
+import com.reas.tracker2.ui.sheets.edit.EditBottomSheetViewModel
+import com.reas.tracker2.ui.sheets.info.InfoBottomSheetsViewModel
 import com.reas.tracker2.util.EventProcessorAdapterImpl
 import com.reas.tracker2.util.InMemoryLog
 import com.reas.tracker2.util.SecretManager
@@ -47,4 +57,6 @@ val sharedModule = module {
     viewModelOf(::TrackInfoScreenViewModel)
     viewModelOf(::SettingsScreenViewModel)
     viewModelOf(::DebugScreenViewModel)
+    viewModelOf(::EditBottomSheetViewModel)
+    viewModelOf(::DeleteDialogViewModel)
 }

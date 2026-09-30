@@ -1,6 +1,7 @@
-package com.reas.tracker2.ui.viewmodels
+package com.reas.tracker2.ui.screens.debug
 
 import com.reas.tracker2.database.Repository
+import com.reas.tracker2.ui.TrackerViewModel
 import com.reas.tracker2.util.InMemoryLog
 import kotlinx.coroutines.flow.runningFold
 

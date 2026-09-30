@@ -18,9 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.itemKey
-import com.reas.tracker2.ui.navigation.ApplicationState
-import com.reas.tracker2.ui.navigation.BottomSheetInfo
+import com.reas.tracker2.ui.navigation.InfoBottomSheet
 import kotlinx.coroutines.flow.collectLatest
 
 // TODO kill it with fire
@@ -31,7 +29,7 @@ data class ChartEntryUiState(
     val key: String,
     val metric: Double,
     val metricAsString: String,
-    val bottomSheetInfo: BottomSheetInfo,
+    val infoBottomSheet: InfoBottomSheet,
     val url: suspend () -> Any? = { null },
 )
 
@@ -63,13 +61,14 @@ fun DoubleChartColumn(
 
 @Composable
 fun LazyDoubleChartColumn(
-    applicationState: ApplicationState,
+    state: LazyListState,
     sortedByTime: Boolean,
     itemsByTime: LazyPagingItems<ChartEntryUiState>,
     itemsByPlays: LazyPagingItems<ChartEntryUiState>,
     onClick: (ChartEntryUiState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // shit code
     val state1 = rememberLazyListState()
     val state2 = rememberLazyListState()
 
@@ -79,27 +78,28 @@ fun LazyDoubleChartColumn(
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
-            LazyChartColumn(applicationState, itemsByTime, onClick, modifier, state1)
-
+            LazyChartColumn(state1, itemsByTime, onClick, modifier)
             LaunchedEffect(state1) {
                 snapshotFlow {
                     state1.firstVisibleItemIndex to state1.firstVisibleItemScrollOffset
                 }.collectLatest { (index, offset) ->
+                    state.requestScrollToItem(index, offset)
                     state2.requestScrollToItem(index, offset)
                 }
             }
         }
+
         AnimatedVisibility(
             !sortedByTime,
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
-            LazyChartColumn(applicationState, itemsByPlays, onClick, modifier, state2)
-
+            LazyChartColumn(state2, itemsByPlays, onClick, modifier)
             LaunchedEffect(state2) {
                 snapshotFlow {
                     state2.firstVisibleItemIndex to state2.firstVisibleItemScrollOffset
                 }.collectLatest { (index, offset) ->
+                    state.requestScrollToItem(index, offset)
                     state1.requestScrollToItem(index, offset)
                 }
             }
@@ -130,36 +130,28 @@ fun ChartColumn(items: List<ChartEntryUiState>, onClick: (ChartEntryUiState) -> 
 
 @Composable
 fun LazyChartColumn(
-    applicationState: ApplicationState,
+    state: LazyListState,
     items: LazyPagingItems<ChartEntryUiState>,
     onClick: (ChartEntryUiState) -> Unit,
     modifier: Modifier = Modifier,
-    state: LazyListState = rememberLazyListState(),
 ) {
-    LazyColumnWithScrollButton(
-        applicationState = applicationState,
-        modifier = modifier,
+    PagedLazyColumn(
         state = state,
+        items = items,
+        key = { it.key },
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        items(
-            items.itemCount,
-            key = items.itemKey { it.key },
-        ) { i ->
-            val entry = items[i]
-            entry?.let {
-                ChartEntry(
-                    number = i + 1,
-                    label = entry.label,
-                    label2 = entry.label2,
-                    metricAsString = entry.metricAsString,
-                    metric = entry.metric / items[0]!!.metric,
-                    onClick = { onClick(entry) },
-                    url = entry.url,
-                    modifier = Modifier.animateItem(),
-                )
-            }
-        }
+    ) { i, entry ->
+        ChartEntry(
+            number = i + 1,
+            label = entry.label,
+            label2 = entry.label2,
+            metricAsString = entry.metricAsString,
+            metric = entry.metric / items[0]!!.metric,
+            onClick = { onClick(entry) },
+            url = entry.url,
+            modifier = Modifier.animateItem(),
+        )
     }
 }
 

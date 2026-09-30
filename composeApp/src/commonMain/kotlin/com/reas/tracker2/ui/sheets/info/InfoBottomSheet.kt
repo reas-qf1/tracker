@@ -1,5 +1,6 @@
-package com.reas.tracker2.ui.dialogs
+package com.reas.tracker2.ui.sheets.info
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,21 +19,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.reas.tracker2.buildConfig.IS_DESKTOP
 import com.reas.tracker2.ui.components.ScrollablePages
 import com.reas.tracker2.ui.navigation.*
 import com.reas.tracker2.ui.rememberAsState
 import com.reas.tracker2.ui.state
-import com.reas.tracker2.ui.viewmodels.InfoBottomSheetsViewModel
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import tracker2.composeapp.generated.resources.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InfoBottomSheet(
-    arguments: BottomSheetInfo,
+    arguments: InfoBottomSheet,
     applicationState: ApplicationState,
     modifier: Modifier = Modifier,
     viewModel: InfoBottomSheetsViewModel = koinViewModel(),
@@ -45,71 +43,66 @@ fun InfoBottomSheet(
     val trackO = arguments.track
     val albumO = arguments.track?.asAlbum ?: arguments.album
 
-    ModalBottomSheet(
-        onDismissRequest = { applicationState.goBack() },
-        modifier = modifier,
-    ) {
-        Column(modifier = Modifier.padding(horizontal = if (IS_DESKTOP) 8.dp else 0.dp)) {
-            track?.let {
-                val trackPlays by rememberAsState { viewModel.trackPlays(trackO) }
-                val trackTimePlayed by rememberAsState { viewModel.trackTimePlayed(trackO) }
-                HistoryBottomSheetComponent(
-                    icon = Icons.Filled.MusicNote,
-                    iconDescription = stringResource(Res.string.track),
-                    header = track,
-                    buttonContents = listOf(
-                        Res.string.track_plays to trackPlays,
-                        Res.string.time_listened to trackTimePlayed,
-                    ),
-                    onMainButton = {
-                        applicationState.navigate(TrackHistory(trackO))
-                    },
-                    onMore = {
-                        applicationState.navigate(TrackInfo(trackO))
-                    },
-                )
-                BottomSheetSpacer()
-            }
+    Column(modifier = modifier) {
+        track?.let {
+            val trackPlays by rememberAsState { viewModel.trackPlays(trackO) }
+            val trackTimePlayed by rememberAsState { viewModel.trackTimePlayed(trackO) }
+            HistoryBottomSheetComponent(
+                icon = Icons.Filled.MusicNote,
+                iconDescription = stringResource(Res.string.track),
+                header = track,
+                buttonContents = listOf(
+                    Res.string.track_plays to trackPlays,
+                    Res.string.time_listened to trackTimePlayed,
+                ),
+                onMainButton = {
+                    applicationState.navigate(TrackHistory(trackO))
+                },
+                onMore = {
+                    applicationState.navigate(TrackInfo(trackO))
+                },
+            )
+            BottomSheetSpacer()
+        }
 
-            ScrollablePages(artists.size) { i ->
-                val artistPlays by rememberAsState { viewModel.artistPlays(artists[i]) }
-                val artistTimePlayed by rememberAsState { viewModel.artistTimePlayed(artists[i]) }
-                HistoryBottomSheetComponent(
-                    icon = Icons.Filled.Person,
-                    iconDescription = stringResource(Res.string.artist),
-                    header = artists[i].name,
-                    buttonContents = listOf(
-                        Res.string.artist_plays to artistPlays,
-                        Res.string.time_listened to artistTimePlayed,
-                    ),
-                    onMore = {
-                        applicationState.navigate(ArtistInfo(artists[i]))
-                    },
-                )
-            }
+        ScrollablePages(artists.size) { i ->
+            val artistPlays by rememberAsState { viewModel.artistPlays(artists[i]) }
+            val artistTimePlayed by rememberAsState { viewModel.artistTimePlayed(artists[i]) }
+            HistoryBottomSheetComponent(
+                icon = Icons.Filled.Person,
+                iconDescription = stringResource(Res.string.artist),
+                header = artists[i].name,
+                buttonContents = listOf(
+                    Res.string.artist_plays to artistPlays,
+                    Res.string.time_listened to artistTimePlayed,
+                ),
+                onMore = {
+                    applicationState.navigate(ArtistInfo(artists[i]))
+                },
+            )
+        }
 
-            album?.let {
-                albumO!!
-                val differentArtists = albumArtists != null && artists.toSet() != albumArtists.toSet()
-                val albumPlays by rememberAsState { viewModel.albumPlays(albumO) }
-                val albumTimePlayed by rememberAsState { viewModel.albumTimePlayed(albumO) }
-                BottomSheetSpacer()
-                HistoryBottomSheetComponent(
-                    icon = Icons.Filled.Album,
-                    iconDescription = stringResource(Res.string.album),
-                    header = album,
-                    buttonContents = listOf(
-                        Res.string.album_plays to albumPlays,
-                        Res.string.time_listened to albumTimePlayed,
-                    ),
-                    onMore = {
-                        applicationState.navigate(AlbumInfo(albumO))
-                    },
-                    icon2 = if (differentArtists) Icons.Filled.Person else null,
-                    iconDescription2 = if (differentArtists) "Album artist" else null,
-                    subtitle = if (differentArtists) albumArtists.raw else null,
-                )
-            }
+        album?.let {
+            albumO!!
+            val differentArtists = albumArtists != null && artists.toSet() != albumArtists.toSet()
+            val albumPlays by rememberAsState { viewModel.albumPlays(albumO) }
+            val albumTimePlayed by rememberAsState { viewModel.albumTimePlayed(albumO) }
+            BottomSheetSpacer()
+            HistoryBottomSheetComponent(
+                icon = Icons.Filled.Album,
+                iconDescription = stringResource(Res.string.album),
+                header = album,
+                buttonContents = listOf(
+                    Res.string.album_plays to albumPlays,
+                    Res.string.time_listened to albumTimePlayed,
+                ),
+                onMore = {
+                    applicationState.navigate(AlbumInfo(albumO))
+                },
+                icon2 = if (differentArtists) Icons.Filled.Person else null,
+                iconDescription2 = if (differentArtists) "Album artist" else null,
+                subtitle = if (differentArtists) albumArtists.raw else null,
+            )
         }
     }
 }
@@ -144,13 +137,17 @@ private fun HistoryBottomSheetComponent(
         ) {
             Icon(icon, iconDescription, tint = MaterialTheme.colorScheme.secondary)
             Spacer(Modifier.width(5.dp))
-            Text(
-                header,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = if (expanded) Int.MAX_VALUE else 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Box(
+                modifier = Modifier.animateContentSize(),
+            ) {
+                Text(
+                    header,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = if (expanded) Int.MAX_VALUE else 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         icon2?.let {
             Row(

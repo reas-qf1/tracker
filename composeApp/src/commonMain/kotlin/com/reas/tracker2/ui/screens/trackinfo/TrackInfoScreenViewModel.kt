@@ -1,4 +1,4 @@
-package com.reas.tracker2.ui.viewmodels
+package com.reas.tracker2.ui.screens.trackinfo
 
 import com.reas.tracker2.database.Repository
 import com.reas.tracker2.network.NetworkRepository
@@ -7,6 +7,7 @@ import com.reas.tracker2.settings.chartSort
 import com.reas.tracker2.shared.Album
 import com.reas.tracker2.shared.TimePeriod
 import com.reas.tracker2.shared.TrackWithAlbum
+import com.reas.tracker2.ui.TrackerViewModel
 import com.reas.tracker2.ui.navigation.ChartSort
 import kotlinx.coroutines.flow.map
 

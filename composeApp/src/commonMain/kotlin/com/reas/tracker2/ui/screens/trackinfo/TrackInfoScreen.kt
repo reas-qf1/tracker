@@ -1,4 +1,4 @@
-package com.reas.tracker2.ui.screens
+package com.reas.tracker2.ui.screens.trackinfo
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,7 +21,6 @@ import com.reas.tracker2.ui.components.SortOrderSelectionChip
 import com.reas.tracker2.ui.navigation.ApplicationState
 import com.reas.tracker2.ui.navigation.TrackInfo
 import com.reas.tracker2.ui.rememberAsState
-import com.reas.tracker2.ui.viewmodels.TrackInfoScreenViewModel
 import com.reas.tracker2.util.toDisplayString
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -30,12 +29,13 @@ import tracker2.composeapp.generated.resources.*
 
 @Composable
 fun TrackInfoScreen(
-    arguments: TrackInfo,
+    screen: TrackInfo,
     applicationState: ApplicationState,
     modifier: Modifier = Modifier,
     viewModel: TrackInfoScreenViewModel = koinViewModel(),
 ) {
-    val track = arguments.track
+    val track = screen.track
+
     val sort by viewModel.sort().collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val period = TimePeriod.ALLTIME
@@ -47,7 +47,6 @@ fun TrackInfoScreen(
     val timeRank by rememberAsState { viewModel.rank(track, period) }
     val playRank by rememberAsState { viewModel.playRank(track, period) }
 
-    applicationState.setTitle("${track.artistsAsString} - ${track.name}")
     Column(
         modifier = modifier.padding(top = 5.dp, start = 5.dp, end = 5.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp),

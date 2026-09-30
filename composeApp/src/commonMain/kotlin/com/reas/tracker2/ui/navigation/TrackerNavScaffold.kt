@@ -1,12 +1,10 @@
 package com.reas.tracker2.ui.navigation
 
 import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -28,24 +26,30 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.*
 import androidx.navigation3.scene.DialogSceneStrategy
-import androidx.navigation3.scene.DialogSceneStrategy.Companion.DialogKey
 import androidx.navigation3.ui.NavDisplay
 import com.reas.tracker2.ui.derivedState
 
-class CustomNavEntryDecorator<T : Any>(
-    appState: ApplicationState,
-) : NavEntryDecorator<T>(
+class CustomNavEntryDecorator<T : Any> :
+    NavEntryDecorator<T>(
         decorate = { entry ->
-            if (!entry.metadata.contains(DialogKey)) {
-                appState.FloatingActionButton(visibleIf = false) {}
+            val isBottomSheet = entry.metadata[BottomSheetSceneStrategy.Companion.BottomSheetKey] ?: false
+            val isDialog = entry.metadata[DialogSceneStrategy.Companion.DialogKey] != null
+            if (!isBottomSheet && !isDialog) {
+                Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                    entry.Content()
+                }
+            } else {
+                entry.Content()
             }
-            entry.Content()
         },
         onPop = { },
     )
 
 inline fun <reified T : NavKey> EntryProviderScope<NavKey>.dialog(noinline content: @Composable (T) -> Unit) =
     entry<T>(metadata = DialogSceneStrategy.dialog(), content = content)
+
+inline fun <reified T : NavKey> EntryProviderScope<NavKey>.bottomSheet(noinline content: @Composable (T) -> Unit) =
+    entry<T>(metadata = BottomSheetSceneStrategy.bottomSheet(), content = content)
 
 data class TrackerNavItem(
     val title: String,
@@ -55,13 +59,13 @@ data class TrackerNavItem(
 
 @Composable
 fun TrackerNavScaffold(
-    applicationState: TrackerApplicationState,
-    modifier: Modifier = Modifier,
+    applicationState: ApplicationState,
     navigationItems: List<TrackerNavItem>,
+    modifier: Modifier = Modifier,
     entries: EntryProviderScope<NavKey>.() -> Unit,
 ) {
     val canNavigateBack by derivedState { applicationState.canNavigateBack() }
-    val currentTab by derivedState { applicationState.currentTab() }
+    val currentTab by derivedState { applicationState.currentScreen().currentTab }
 
     val navLayoutType = NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfo())
     val scrollBehavior =
@@ -84,7 +88,9 @@ fun TrackerNavScaffold(
             TopAppBar(
                 title = {
                     Text(
-                        applicationState.getTitle(),
+                        applicationState
+                            .currentScreen()
+                            .screenState.title.value,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -141,7 +147,7 @@ fun TrackerNavScaffold(
             val decorators =
                 listOf(
                     rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
-                    remember { CustomNavEntryDecorator(applicationState) },
+                    remember { CustomNavEntryDecorator() },
                 )
             val decoratedEntries =
                 rememberDecoratedNavEntries(
@@ -152,11 +158,11 @@ fun TrackerNavScaffold(
             NavDisplay(
                 entries = decoratedEntries.toMutableStateList(),
                 onBack = { applicationState.goBack() },
-                sceneStrategies = remember { listOf(DialogSceneStrategy()) },
+                sceneStrategies = remember { listOf(DialogSceneStrategy(), BottomSheetSceneStrategy()) },
                 predictivePopTransitionSpec = {
                     ContentTransform(
-                        fadeIn(),
-                        fadeOut(),
+                        scaleIn(initialScale = 0.9f),
+                        slideOutHorizontally { -it },
                     )
                 },
             )

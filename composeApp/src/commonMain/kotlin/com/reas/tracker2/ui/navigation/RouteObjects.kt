@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
 import com.reas.tracker2.shared.Album
 import com.reas.tracker2.shared.Artist
+import com.reas.tracker2.shared.Play
 import com.reas.tracker2.shared.TrackWithAlbum
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -17,6 +18,12 @@ sealed class Route : NavKey
 
 @Serializable
 sealed class DialogRoute : Route()
+
+@Serializable
+sealed class ScreenRoute : Route() {
+    abstract val screenState: ScreenState
+    abstract val currentTab: Int
+}
 
 @Serializable
 enum class ChartType {
@@ -71,47 +78,89 @@ enum class ChartSort {
 }
 
 @Serializable
-object History : Route()
+object History : ScreenRoute() {
+    @Transient override val screenState = screenState("History")
+
+    @Transient override val currentTab = 0
+}
 
 @Serializable
 data class TrackHistory(
     val track: TrackWithAlbum,
-) : Route()
+) : ScreenRoute() {
+    @Transient override val screenState = screenState("${track.artistsAsString} - ${track.name}")
+
+    @Transient override val currentTab = 0
+}
 
 @Serializable
 data class Charts(
     val type: ChartType = ChartType.ARTISTS,
-) : Route()
+) : ScreenRoute() {
+    @Transient override val screenState = screenState("Charts")
+
+    @Transient override val currentTab = 1
+}
 
 @Serializable
-object Settings : Route()
+object Settings : ScreenRoute() {
+    @Transient override val screenState = screenState("Settings")
+
+    @Transient override val currentTab = 2
+}
 
 @Serializable
-object Debug : Route()
+object Debug : ScreenRoute() {
+    @Transient override val screenState = screenState("Debug")
+
+    @Transient override val currentTab = 3
+}
 
 @Serializable
 data class ArtistInfo(
     val artist: Artist,
-) : Route()
+) : ScreenRoute() {
+    @Transient override val screenState = screenState(artist.name)
+
+    @Transient override val currentTab = 1
+}
 
 @Serializable
 data class AlbumInfo(
     val album: Album,
-) : Route()
+) : ScreenRoute() {
+    @Transient override val screenState = screenState("${album.artistsAsString} - ${album.name}")
+
+    @Transient override val currentTab = 1
+}
 
 @Serializable
 data class TrackInfo(
     val track: TrackWithAlbum,
-) : Route()
+) : ScreenRoute() {
+    @Transient override val screenState = screenState("${track.artistsAsString} - ${track.name}")
+
+    @Transient override val currentTab = 1
+}
 
 @Serializable
-data class BottomSheetInfo(
+data class InfoBottomSheet(
     val artist: Artist? = null,
     val album: Album? = null,
     val track: TrackWithAlbum? = null,
 ) : DialogRoute()
 
 @Serializable
+data class EditBottomSheet(
+    val play: Play,
+) : DialogRoute()
+
+@Serializable
 data class Error(
     val message: String,
+) : DialogRoute()
+
+@Serializable
+data class Delete(
+    val play: Play,
 ) : DialogRoute()

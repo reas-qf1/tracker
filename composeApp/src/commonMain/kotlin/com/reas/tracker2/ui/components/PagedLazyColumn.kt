@@ -3,16 +3,12 @@ package com.reas.tracker2.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -20,39 +16,43 @@ import androidx.compose.ui.graphics.Brush.Companion.horizontalGradient
 import androidx.compose.ui.graphics.Brush.Companion.verticalGradient
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemKey
 import com.reas.tracker2.ui.derivedState
-import com.reas.tracker2.ui.navigation.ApplicationState
-import kotlinx.coroutines.launch
 
 @Composable
-fun LazyColumnWithScrollButton(
-    applicationState: ApplicationState,
+fun <T : Any> PagedLazyColumn(
+    state: LazyListState,
+    items: LazyPagingItems<T>,
+    key: (T) -> Any,
     modifier: Modifier = Modifier,
-    state: LazyListState = rememberLazyListState(),
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    content: LazyListScope.() -> Unit,
+    header: LazyListScope.() -> Unit = {},
+    content: @Composable LazyItemScope.(Int, T) -> Unit,
 ) {
-    val showButton by derivedState { state.firstVisibleItemIndex > 0 }
-    val scope = rememberCoroutineScope()
-    applicationState.FloatingActionButton(
-        visibleIf = showButton,
-        onClick = {
-            scope.launch {
-                state.animateScrollToItem(0)
-            }
-        },
-    ) {
-        Icon(imageVector = Icons.Filled.ArrowUpward, contentDescription = "Scroll to top")
+    val showBottom by derivedState { state.firstVisibleItemIndex > 0 }
+    val actualScrollState by derivedState {
+        if (items.itemCount == 0) {
+            LazyListState()
+        } else {
+            state
+        }
     }
 
-    LazyColumn(state = state, modifier = modifier, verticalArrangement = verticalArrangement) {
+    LazyColumn(state = actualScrollState, modifier = modifier, verticalArrangement = verticalArrangement) {
         item(key = "_top") {
             Spacer(Modifier.height(2.dp))
         }
 
-        content()
+        header()
+        items(items.itemCount, key = items.itemKey(key = key)) { index ->
+            val entry = items[index]
+            entry?.let {
+                content(index, entry)
+            }
+        }
 
-        if (showButton) {
+        if (showBottom) {
             item(key = "_bottom") {
                 EndIndicator(Modifier.height(75.dp))
             }
