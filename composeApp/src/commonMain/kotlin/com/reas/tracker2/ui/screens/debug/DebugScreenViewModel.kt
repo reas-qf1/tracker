@@ -12,6 +12,9 @@ class DebugScreenViewModel(
     val playCount
         get() = repository.getPlayCount().asIntStateFlow()
 
+    val editCount
+        get() = repository.getEditCount().asIntStateFlow()
+
     val mediaEventLog
         get() =
             inMemoryLog["MediaEvents"]

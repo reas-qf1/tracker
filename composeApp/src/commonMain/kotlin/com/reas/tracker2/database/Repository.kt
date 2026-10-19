@@ -1,14 +1,12 @@
 package com.reas.tracker2.database
 
 import androidx.paging.PagingSource
-import com.reas.tracker2.database.entities.AlbumEntity
-import com.reas.tracker2.database.entities.ArtistEntity
-import com.reas.tracker2.database.entities.PlayEntity
-import com.reas.tracker2.database.entities.TrackEntity
+import com.reas.tracker2.database.entities.*
 import com.reas.tracker2.shared.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlin.time.Duration
+import kotlin.uuid.Uuid
 
 interface Repository {
     suspend fun getArtist(id: Long): Artist
@@ -19,10 +17,6 @@ interface Repository {
 
     suspend fun getTrack(id: Long): TrackWithAlbum
 
-    suspend fun getOrInsertArtists(artists: List<Artist>): List<Long>
-
-    suspend fun getOrInsertAlbum(album: Album): Long
-
     suspend fun getOrInsertTrack(track: TrackWithAlbum): Long
 
     suspend fun insertPlay(play: Play): Long
@@ -31,9 +25,17 @@ interface Repository {
 
     suspend fun updatePlay(play: Play)
 
+    suspend fun updatePlaysEvents(plays: List<Play>)
+
     suspend fun deletePlay(play: Play)
 
+    suspend fun getPlay(id: Uuid): Play?
+
     suspend fun getLastPlayFromSource(source: Source): Play?
+
+    suspend fun getOriginalMetadata(play: Play): TrackWithAlbum?
+
+    suspend fun markPlayDeleted(play: Play)
 
     fun getNowPlayingTracks(): Flow<List<Play>>
 
@@ -107,7 +109,15 @@ interface Repository {
 
     fun getTrackRankByPlayCount(track: TrackWithAlbum, period: TimePeriod): Flow<Int>
 
+    suspend fun insertEdit(edit: PlayEdit): Long
+
+    suspend fun updateEdit(edit: PlayEdit)
+
+    suspend fun deleteEdit(edit: PlayEdit)
+
     fun getPlayCount(): Flow<Int>
+
+    fun getEditCount(): Flow<Int>
 
     // oh my fucking god
     // TODO get rid of this when the paging library becomes good
@@ -115,6 +125,7 @@ interface Repository {
         Play(
             id = entity.id,
             metadata = entity.metadata.toTrack(),
+            isDeleted = entity.isDeleted,
             timestamp = entity.timestamp,
             duration = entity.duration,
             timePlayed = entity.timePlayed,
@@ -149,6 +160,7 @@ class RoomRepository(
         PlayEntity(
             id = id,
             trackId = getOrInsertTrack(metadata),
+            isDeleted = isDeleted,
             artists = artistsAsString,
             albumArtists = albumArtistsAsString,
             timestamp = timestamp,
@@ -170,11 +182,30 @@ class RoomRepository(
                     albumObject = t.asAlbum?.copy(artists = t.albumArtists!!.copy(raw = albumArtists!!)),
                 )
             },
+            isDeleted = isDeleted,
             timestamp = timestamp,
             duration = duration,
             timePlayed = timePlayed,
             source = Source.user(sourceDevice, sourceApp),
             associatedEvents = associatedEvents,
+        )
+
+    private fun PlayEdit.toEntity() =
+        EditsEntity(
+            id = id,
+            playId = playId,
+            trackId = metadata.id,
+            timestamp = timestamp,
+            reason = reason,
+        )
+
+    private suspend fun EditsEntity.toObject() =
+        PlayEdit(
+            id = id,
+            playId = playId,
+            metadata = getTrack(trackId),
+            timestamp = timestamp,
+            reason = reason,
         )
 
     override suspend fun getArtist(id: Long) = db.trackDao().getArtist(id).toObject()
@@ -184,10 +215,6 @@ class RoomRepository(
     override suspend fun getAlbum(id: Long) = db.trackDao().getAlbum(id).toObject()
 
     override suspend fun getTrack(id: Long) = db.trackDao().getTrack(id).toObject()
-
-    override suspend fun getOrInsertArtists(artists: List<Artist>) = db.trackDao().getOrInsertArtists(artists.map { it.name })
-
-    override suspend fun getOrInsertAlbum(album: Album) = db.trackDao().getOrInsertAlbum(album.name, album.artists)
 
     override suspend fun getOrInsertTrack(track: TrackWithAlbum) =
         db.trackDao().getOrInsertTrack(
@@ -205,7 +232,15 @@ class RoomRepository(
 
     override suspend fun updatePlay(play: Play) = db.playDao().update(play.toEntity())
 
+    override suspend fun updatePlaysEvents(plays: List<Play>) = db.playDao().updateAssociatedEvents(plays.map { it.toEntity() })
+
+    override suspend fun getPlay(id: Uuid) = db.playDao().getPlay(id)?.toObject()
+
     override suspend fun getLastPlayFromSource(source: Source) = db.playDao().getLastPlayFromSource(source.client, source.app)?.toObject()
+
+    override suspend fun getOriginalMetadata(play: Play) = db.editsDao().getOriginalMetadata(play.id)?.let { getTrack(it) }
+
+    override suspend fun markPlayDeleted(play: Play) = db.playDao().markPlayDeleted(play.id)
 
     override fun getNowPlayingTracks() = db.playDao().getNowPlayingTracks().map { it.map { it.toObject() } }
 
@@ -297,5 +332,13 @@ class RoomRepository(
     override fun getTrackRankByPlayCount(track: TrackWithAlbum, period: TimePeriod) =
         db.playDao().getTrackRankByPlayCount(track.id, period.start, period.end)
 
+    override suspend fun insertEdit(edit: PlayEdit) = db.editsDao().insert(edit.toEntity())
+
+    override suspend fun updateEdit(edit: PlayEdit) = db.editsDao().update(edit.toEntity())
+
+    override suspend fun deleteEdit(edit: PlayEdit) = db.editsDao().delete(edit.toEntity())
+
     override fun getPlayCount() = db.playDao().getPlayCount()
+
+    override fun getEditCount() = db.editsDao().getEditCount()
 }

@@ -3,10 +3,7 @@ package com.reas.tracker2.android
 import android.media.MediaMetadata
 import android.media.session.PlaybackState
 import com.reas.tracker2.database.Repository
-import com.reas.tracker2.shared.Event
-import com.reas.tracker2.shared.EventProcessor
-import com.reas.tracker2.shared.EventState
-import com.reas.tracker2.shared.Source
+import com.reas.tracker2.shared.*
 import com.reas.tracker2.util.NowPlayingNotificationManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
@@ -67,12 +64,14 @@ class MediaEventRelay(
         }
 
         val isPlaying = state.state == PlaybackState.STATE_PLAYING
+        val metadataObject = TrackWithAlbum(metadata.title!!, metadata.artist!!, metadata.album, metadata.albumArtist)
+        // i don't like this, we do 2x more db calls than necessary
+        val trackId = repository.getOrInsertTrack(metadataObject)
+        val metadataWithIds = repository.getTrack(trackId)
+
         val event =
             Event.create(
-                track = metadata.title!!,
-                artists = metadata.artist!!,
-                album = metadata.album,
-                albumArtists = metadata.albumArtist ?: metadata.artist,
+                metadata = metadataWithIds,
                 duration = metadata.duration,
                 timestamp = timestamp,
                 position = state.position,
@@ -85,13 +84,24 @@ class MediaEventRelay(
             if (!filter(event, lastEvent)) {
                 return
             }
+            val savedEvent = map(event, lastEvent)
             lastEvent = event
 
-            val savedEvent = map(event, lastEvent)
-            val plays = eventProcessor.process(listOf(savedEvent))
-            plays.lastOrNull()?.let { lastPlay ->
-                notificationManager.show(lastPlay)
-                repository.insertPlays(plays)
+            val (newPlays, updatedPlays) = eventProcessor.process(listOf(savedEvent))
+            logger.debug { "${newPlays.size} new plays, ${updatedPlays.size} updated plays" }
+
+            repository.insertPlays(newPlays)
+            repository.updatePlaysEvents(updatedPlays)
+            newPlays.forEach { play ->
+                repository.insertEdit(PlayEdit.new(play))
+            }
+
+            val notifPlay = newPlays.lastOrNull { !it.isDeleted } ?: updatedPlays.lastOrNull { !it.isDeleted }
+            notifPlay?.let { play ->
+                notificationManager.show(
+                    repository.getPlay(play.id)
+                        ?: throw IllegalStateException("can't find play by id ${play.id}"),
+                )
             }
         }
     }

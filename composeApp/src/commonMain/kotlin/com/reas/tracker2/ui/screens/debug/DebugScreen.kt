@@ -29,6 +29,7 @@ fun DebugScreen(
     viewModel: DebugScreenViewModel = koinViewModel(),
 ) {
     val playCount by rememberAsState { viewModel.playCount }
+    val editCount by rememberAsState { viewModel.editCount }
     val mediaEventLog by rememberAsState { viewModel.mediaEventLog }
 
     val verticalScrollState = rememberScrollState()
@@ -40,6 +41,7 @@ fun DebugScreen(
 
     Column(modifier = modifier) {
         Text("Total plays: $playCount")
+        Text("Total edits: $editCount")
         Text("Event log:")
         Button(onClick = { throw RuntimeException("Error message") }) {
             Text("Simulate crash")

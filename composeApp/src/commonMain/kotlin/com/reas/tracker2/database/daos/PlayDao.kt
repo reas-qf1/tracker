@@ -6,13 +6,15 @@ import androidx.room3.OnConflictStrategy.Companion.REPLACE
 import androidx.room3.paging.PagingSourceDaoReturnTypeConverter
 import com.reas.tracker2.database.*
 import com.reas.tracker2.database.entities.PlayEntity
+import com.reas.tracker2.shared.EventInfo
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 import kotlin.time.Instant
+import kotlin.uuid.Uuid
 
 private const val inTimeRange = "timestamp >= :start AND timestamp < :end"
-private const val isFullPlay = "timePlayed >= MIN(duration / 2, 240 * 1000)"
-private const val isNotSkip = "timePlayed >= 2 * 1000"
+private const val isFullPlay = "timePlayed >= MIN(duration / 2, 240 * 1000) AND NOT isDeleted"
+private const val isNotSkip = "timePlayed >= 2 * 1000 AND NOT isDeleted"
 
 @Dao
 @DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)
@@ -29,10 +31,16 @@ interface PlayDao {
     @Delete
     suspend fun delete(play: PlayEntity)
 
+    @Query("SELECT * FROM plays WHERE id = :id")
+    suspend fun getPlay(id: Uuid): PlayEntity?
+
     @Query("SELECT * FROM plays WHERE sourceDevice = :device AND sourceApp = :app ORDER BY timestamp DESC LIMIT 1")
     suspend fun getLastPlayFromSource(device: String?, app: String?): PlayEntity?
 
-    @Query("SELECT * FROM plays WHERE lastPlaying = 1")
+    @Query("UPDATE plays SET isDeleted = 1 WHERE id = :id")
+    suspend fun markPlayDeleted(id: Uuid)
+
+    @Query("SELECT * FROM plays WHERE lastPlaying = 1 AND isDeleted = 0")
     fun getNowPlayingTracks(): Flow<List<PlayEntity>>
 
     @Transaction
@@ -41,7 +49,7 @@ interface PlayDao {
         """
         WITH t0 as (
             SELECT * FROM
-                (SELECT *, 1 as sort1, 0 as sort2 FROM plays WHERE lastPlaying = 1)
+                (SELECT *, 1 as sort1, 0 as sort2 FROM plays WHERE lastPlaying = 1 AND isDeleted = 0)
             UNION ALL SELECT * FROM
                 (SELECT *, 2 as sort1, timestamp as sort2 FROM plays WHERE $isFullPlay AND lastPlaying = 0)
         ) SELECT t0.*, tracks.* FROM t0
@@ -445,4 +453,27 @@ interface PlayDao {
 
     @Query("SELECT COUNT(*) FROM plays")
     fun getPlayCount(): Flow<Int>
+
+    @Query(
+        """
+        UPDATE plays SET 
+            timePlayed = :timePlayed, lastPosition = :lastPosition, 
+            lastPlaying = :lastPlaying, associatedEvents = :associatedEvents 
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateAssociatedEvents(
+        id: Uuid,
+        timePlayed: Duration,
+        lastPosition: Duration,
+        lastPlaying: Boolean,
+        associatedEvents: MutableList<EventInfo>,
+    )
+
+    @Transaction
+    suspend fun updateAssociatedEvents(plays: List<PlayEntity>) {
+        for (play in plays) {
+            updateAssociatedEvents(play.id, play.timePlayed, play.lastPosition, play.lastPlaying, play.associatedEvents)
+        }
+    }
 }

@@ -11,71 +11,26 @@ class EventProcessor(
         private val logger = KotlinLogging.logger {}
     }
 
-    // TODO: these should probably be a preference in order to persist between restarts
-    private val temporaryEdits = hashMapOf<Source, Pair<Play, TrackWithAlbum?>>()
-
-    suspend fun getLastPlay(source: Source): Play? {
-        val dbPlay = revertTemporaryEdit(adapter.getLastPlayFromSource(source))
-        val deletedPlay = temporaryEdits[source]?.first
-
-        return if (dbPlay != null && deletedPlay != null) {
-            if (dbPlay.timestamp > deletedPlay.timestamp) dbPlay else deletedPlay
-        } else {
-            dbPlay ?: deletedPlay
-        }
-    }
-
-    suspend fun addTemporaryEdit(play: Play, newMetadata: TrackWithAlbum?): Boolean {
-        val source = play.source
-        val lastPlay = getLastPlay(source)
-        val isLastPlay = lastPlay != null && lastPlay.timestamp == play.timestamp
-        if (isLastPlay) {
-            logger.debug { "addTemporaryEdit $play $newMetadata" }
-            val originalPlay = temporaryEdits[source]?.first ?: play
-            temporaryEdits[source] = originalPlay to newMetadata
-        }
-        return isLastPlay
-    }
-
-    private fun revertTemporaryEdit(play: Play?): Play? {
-        if (play == null) return null
-        var newPlay = play
-        temporaryEdits[play.source]?.let {
-            newPlay = play.copy(metadata = it.first.metadata)
-        }
-        return newPlay
-    }
-
-    private fun MutableList<Play>.applyTemporaryEditAndAdd(play: Play) {
-        val temporaryEdit = temporaryEdits[play.source]
-        if (temporaryEdit != null) {
-            if (temporaryEdit.second != null) {
-                this.add(play.copy(metadata = temporaryEdit.second!!))
-            }
-        } else {
-            this.add(play)
-        }
-    }
-
-    private fun clearTemporaryEdit(play: Play) {
-        val temporaryEdit = temporaryEdits[play.source]
-        if (temporaryEdit != null && temporaryEdit.first.timestamp == play.timestamp) {
-            temporaryEdits.remove(play.source)
-        }
-    }
-
-    suspend fun process(snapshot: List<Event>): List<Play> {
+    suspend fun process(snapshot: List<Event>): Pair<List<Play>, List<Play>> {
         logger.debug { "processing ${snapshot.size} events" }
-        val resultPlays = mutableListOf<Play>()
+        val newPlays = mutableListOf<Play>()
+        val updatedPlays = mutableListOf<Play>()
 
         snapshot.groupBy { it.source }.forEach { (source, events) ->
-            processSingleSource(resultPlays, source, events)
+            processSingleSource(newPlays, updatedPlays, source, events)
         }
-        return resultPlays
+        return newPlays to updatedPlays
     }
 
-    private suspend fun processSingleSource(resultPlays: MutableList<Play>, source: Source, events: List<Event>) {
-        var play = getLastPlay(source)
+    private suspend fun processSingleSource(
+        newPlays: MutableList<Play>,
+        updatedPlays: MutableList<Play>,
+        source: Source,
+        events: List<Event>,
+    ) {
+        var play = adapter.getLastPlayFromSource(source)
+        var adjMetadata: TrackWithAlbum? = play?.let { adapter.getOriginalMetadata(play) }
+
         val eventsSorted = events.sortedBy { it.timestamp }
         if (play != null && eventsSorted[0].timestamp < play.timestamp) {
             logger.error {
@@ -112,17 +67,22 @@ class EventProcessor(
                 play.timePlayed += event.timestamp - play.lastTimestamp
             }
 
-            val isNewPlay = isNewPlay(event, play)
-            logger.debug { "$event $play decided $isNewPlay" }
+            val playAdjMetadata = if (adjMetadata != null) play.copy(metadata = adjMetadata) else play
+            val isNewPlay = isNewPlay(event, playAdjMetadata)
+            logger.debug { "$event $playAdjMetadata decided $isNewPlay" }
 
             if (isNewPlay) {
                 if (play.lastPlaying) {
                     val position = play.lastPosition + (event.timestamp - play.lastTimestamp) * play.lastSpeed
                     play.plug(event.timestamp, position, play.lastSpeed)
                 }
-                resultPlays.applyTemporaryEditAndAdd(play)
-                clearTemporaryEdit(play)
+                if (adjMetadata == null) {
+                    newPlays.add(play)
+                } else {
+                    updatedPlays.add(play)
+                }
                 play = Play.fromEvent(event)
+                adjMetadata = null
             } else {
                 play.associatedEvents.add(event.info)
             }
@@ -130,7 +90,11 @@ class EventProcessor(
         }
 
         if (play != null) {
-            resultPlays.applyTemporaryEditAndAdd(play)
+            if (adjMetadata == null) {
+                newPlays.add(play)
+            } else {
+                updatedPlays.add(play)
+            }
         }
     }
 

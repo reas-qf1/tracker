@@ -51,8 +51,7 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE trackId = :id")
     suspend fun getTrack(id: Long): TrackEntity
 
-    @Transaction
-    suspend fun getOrInsertArtists(artists: List<String>): List<Long> {
+    private suspend fun getOrInsertArtists(artists: List<String>): List<Long> {
         val existingArtists = getArtistIds(artists).associate { it.name to it.artistId }
         val newArtists = artists.filter { !existingArtists.containsKey(it) }
         if (newArtists.isEmpty()) {
@@ -63,8 +62,7 @@ interface TrackDao {
         return artists.map { existingArtists[it] ?: newArtistIds[it]!! }.sorted()
     }
 
-    @Transaction
-    suspend fun getOrInsertAlbum(name: String, artists: ArtistList): Long {
+    private suspend fun getOrInsertAlbum(name: String, artists: ArtistList): Long {
         val artistIds = getOrInsertArtists(artists.map { it.name })
         return getAlbumId(name, artistIds) ?: run {
             val albumId = insertAlbum(

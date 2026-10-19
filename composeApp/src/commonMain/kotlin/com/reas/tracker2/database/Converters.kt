@@ -2,7 +2,7 @@ package com.reas.tracker2.database
 
 import androidx.room3.ColumnTypeConverter
 import com.reas.tracker2.shared.EventInfo
-import com.reas.tracker2.shared.EventState
+import com.reas.tracker2.shared.PlayEdit
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -35,14 +35,14 @@ class Converters {
     fun stringToIdList(string: String): List<Long> = string.split(",").map { it.toLong() }
 
     @ColumnTypeConverter
-    fun eventStateToString(state: EventState): String = state.name
-
-    @ColumnTypeConverter
-    fun stringToEventState(value: String): EventState = EventState.valueOf(value)
-
-    @ColumnTypeConverter
     fun uuidToString(uuid: Uuid) = uuid.toHexDashString()
 
     @ColumnTypeConverter
     fun stringToUuid(string: String) = Uuid.parseHexDash(string)
+
+    @ColumnTypeConverter
+    fun editReasonToString(editReason: PlayEdit.EditReason) = Json.encodeToString(editReason)
+
+    @ColumnTypeConverter
+    fun stringToEditReason(string: String): PlayEdit.EditReason = Json.decodeFromString(string)
 }

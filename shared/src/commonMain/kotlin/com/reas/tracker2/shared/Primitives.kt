@@ -2,11 +2,13 @@ package com.reas.tracker2.shared
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlin.random.Random
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @Serializable
 data class ArtistList(
@@ -93,6 +95,12 @@ data class TrackWithAlbum(
             album?.let { Album(album, albumArtists ?: artists) },
         )
 
+    constructor(track: String, artists: String, album: String?, albumArtists: String?) :
+        this(
+            Track(track, ArtistList(artists)),
+            album?.let { Album(album, ArtistList(albumArtists ?: artists)) },
+        )
+
     val id: Long
         get() = trackObject.id
     val name: String
@@ -124,6 +132,14 @@ data class TrackWithAlbum(
         if (album != other.album) return false
         if (albumArtists != other.albumArtists) return false
         return true
+    }
+
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + artists.hashCode()
+        result = 31 * result + album.hashCode()
+        result = 31 * result + albumArtists.hashCode()
+        return result
     }
 }
 
@@ -183,10 +199,7 @@ data class Event(
 
     companion object {
         fun create(
-            track: String,
-            artists: String,
-            album: String?,
-            albumArtists: String?,
+            metadata: TrackWithAlbum,
             duration: Long,
             timestamp: Long,
             position: Long,
@@ -194,12 +207,7 @@ data class Event(
             speed: Double,
             source: Source,
         ) = Event(
-            metadata = TrackWithAlbum(
-                track,
-                ArtistList(artists),
-                album,
-                ArtistList(albumArtists ?: artists),
-            ),
+            metadata = metadata,
             duration = duration.milliseconds,
             info = EventInfo(
                 timestamp = Instant.fromEpochMilliseconds(timestamp),
@@ -227,8 +235,9 @@ data class Source(
 
 @Serializable
 data class Play(
-    val id: Long,
+    val id: Uuid,
     val metadata: TrackWithAlbum,
+    val isDeleted: Boolean,
     val duration: Duration,
     val timestamp: Instant,
     var timePlayed: Duration,
@@ -304,15 +313,57 @@ data class Play(
     }
 
     companion object {
+        @OptIn(ExperimentalUuidApi::class)
         fun fromEvent(event: Event): Play =
             Play(
-                id = Random.nextLong(),
+                id = Uuid.generateV4(),
                 metadata = event.metadata,
+                isDeleted = false,
                 duration = event.duration,
                 timestamp = event.timestamp,
                 timePlayed = Duration.ZERO,
                 source = event.source,
                 associatedEvents = mutableListOf(event.info),
+            )
+    }
+}
+
+@Serializable
+data class PlayEdit(
+    val id: Uuid,
+    val playId: Uuid,
+    val timestamp: Instant,
+    val metadata: TrackWithAlbum,
+    val reason: EditReason,
+) {
+    @Serializable
+    sealed class EditReason {
+        @Serializable
+        object Initial : EditReason()
+
+        @Serializable
+        object Manual : EditReason()
+    }
+
+    companion object {
+        @OptIn(ExperimentalUuidApi::class)
+        fun new(play: Play) =
+            PlayEdit(
+                id = Uuid.generateV4(),
+                playId = play.id,
+                timestamp = play.timestamp,
+                metadata = play.metadata,
+                reason = EditReason.Initial,
+            )
+
+        @OptIn(ExperimentalUuidApi::class)
+        fun edit(play: Play, newMetadata: TrackWithAlbum, reason: EditReason) =
+            PlayEdit(
+                id = Uuid.generateV4(),
+                playId = play.id,
+                timestamp = Clock.System.now(),
+                metadata = newMetadata,
+                reason = reason,
             )
     }
 }

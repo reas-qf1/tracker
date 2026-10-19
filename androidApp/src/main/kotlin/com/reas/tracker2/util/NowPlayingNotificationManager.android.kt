@@ -10,17 +10,24 @@ import com.reas.tracker2.android.NotificationWrapper
 import com.reas.tracker2.shared.EventInfo
 import com.reas.tracker2.shared.Play
 import com.reas.tracker2.shared.TrackWithAlbum
+import kotlin.uuid.Uuid
 
 class NowPlayingNotificationManagerAndroid(
     private val notificationManager: NotificationWrapper,
 ) : NowPlayingNotificationManager {
+    private var currentId: Uuid? = null
+
     override fun show(play: Play) {
         updateNotification(notificationBuilder(play.metadata, play.lastEvent))
+        currentId = play.id
     }
 
     override fun showDefault() {
         updateNotification(defaultNotificationBuilder)
+        currentId = null
     }
+
+    override fun currentId(): Uuid? = currentId
 
     private fun notificationBuilder(metadata: TrackWithAlbum, event: EventInfo): NotificationBuilder =
         if (event.isPlaying) {
@@ -29,6 +36,7 @@ class NowPlayingNotificationManagerAndroid(
                 setContentText(metadata.artistsAsString)
                 setSmallIcon(R.drawable.ic_stat_name)
                 setShowWhen(false)
+                setOngoing(true)
 
                 val resultIntent = Intent(context, MainActivity::class.java)
                 val resultPendingIntent =
@@ -54,6 +62,7 @@ class NowPlayingNotificationManagerAndroid(
             setContentTitle("Nothing is playing")
             setSmallIcon(R.drawable.ic_stat_name)
             setShowWhen(false)
+            setOngoing(true)
         }
     }
 }

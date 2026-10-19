@@ -1,6 +1,7 @@
 package com.reas.tracker2.database
 
 import androidx.room3.*
+import com.reas.tracker2.database.daos.EditsDao
 import com.reas.tracker2.database.daos.PlayDao
 import com.reas.tracker2.database.daos.TrackDao
 import com.reas.tracker2.database.entities.*
@@ -19,6 +20,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
         ArtistEntity::class,
         TrackArtistCrossRef::class,
         AlbumArtistCrossRef::class,
+        EditsEntity::class,
     ],
     version = 1,
     exportSchema = false,
@@ -29,6 +31,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playDao(): PlayDao
 
     abstract fun trackDao(): TrackDao
+
+    abstract fun editsDao(): EditsDao
 
     companion object {
         fun getDatabase(builder: Builder<AppDatabase>): AppDatabase =
