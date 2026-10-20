@@ -43,8 +43,10 @@ class EventProcessor(
         eventsSorted.forEach { event ->
             logger.debug { "started processing $event" }
             if (play == null) {
+                logger.debug { "play == null" }
                 if (event.isPlaying) {
                     play = Play.fromEvent(event)
+                    updatingPlay = false
                 }
                 return@forEach
             }

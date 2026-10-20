@@ -16,7 +16,7 @@ class MediaEventRelay(
     private val eventProcessor: EventProcessor,
     private val notificationManager: NowPlayingNotificationManager,
 ) {
-    private val GRACE_PERIOD = 50.milliseconds
+    private val GRACE_PERIOD = 500.milliseconds
 
     private val logger = KotlinLogging.logger { }
     private var lastEvent: Event? = null
@@ -30,13 +30,12 @@ class MediaEventRelay(
             if (!lastEvent.isPlaying && !event.isPlaying) {
                 return false
             }
-            if (lastEvent.isPlaying && event.isPlaying &&
-                lastEvent.metadata == event.metadata &&
-                event.speed == lastEvent.speed &&
-                ((event.timestamp - lastEvent.timestamp) * event.speed - (event.position - lastEvent.position)).absoluteValue <
-                GRACE_PERIOD
-            ) {
-                return false
+            if (lastEvent.isPlaying && event.isPlaying && lastEvent.metadata == event.metadata) {
+                val expectedDiff = event.timestamp - lastEvent.timestamp
+                val actualDiff = (event.position - lastEvent.position) / event.speed
+                if ((expectedDiff - actualDiff).absoluteValue < GRACE_PERIOD) {
+                    return false
+                }
             }
         }
         return true
@@ -46,6 +45,20 @@ class MediaEventRelay(
         var newEvent = event
         if (event.isPlaying && event.position < EventProcessor.SKIP_MIN_DURATION) {
             newEvent = newEvent.copy(info = newEvent.info.copy(position = Duration.ZERO))
+        }
+        if (lastEvent != null && lastEvent.metadata == event.metadata) {
+            if (lastEvent.isPlaying) {
+                val expectedDiff = event.timestamp - lastEvent.timestamp
+                val actualDiff = (event.position - lastEvent.position) / event.speed
+                if ((expectedDiff - actualDiff).absoluteValue < GRACE_PERIOD) {
+                    val actualPos = lastEvent.position + expectedDiff * event.speed
+                    newEvent = newEvent.copy(info = newEvent.info.copy(position = actualPos))
+                }
+            } else {
+                if ((lastEvent.position - event.position).absoluteValue < GRACE_PERIOD) {
+                    newEvent = newEvent.copy(info = newEvent.info.copy(position = lastEvent.position))
+                }
+            }
         }
         return newEvent
     }
@@ -69,23 +82,22 @@ class MediaEventRelay(
         val trackId = repository.getOrInsertTrack(metadataObject)
         val metadataWithIds = repository.getTrack(trackId)
 
-        val event =
-            Event.create(
-                metadata = metadataWithIds,
-                duration = metadata.duration,
-                timestamp = timestamp,
-                position = state.position,
-                state = if (isPlaying) EventState.PLAYING else EventState.STOPPED,
-                speed = state.playbackSpeed.toDouble(),
-                source = Source.local(appId),
-            )
+        val event = Event.create(
+            metadata = metadataWithIds,
+            duration = metadata.duration,
+            timestamp = timestamp,
+            position = state.position,
+            state = if (isPlaying) EventState.PLAYING else EventState.STOPPED,
+            speed = state.playbackSpeed.toDouble(),
+            source = Source.local(appId),
+        )
 
         lock.withLock {
             if (!filter(event, lastEvent)) {
                 return
             }
             val savedEvent = map(event, lastEvent)
-            lastEvent = event
+            lastEvent = savedEvent
 
             val (newPlays, updatedPlays) = eventProcessor.process(listOf(savedEvent))
             logger.debug { "${newPlays.size} new plays, ${updatedPlays.size} updated plays" }

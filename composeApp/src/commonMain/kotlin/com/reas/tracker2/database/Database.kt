@@ -38,7 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getDatabase(builder: Builder<AppDatabase>): AppDatabase =
             builder
                 .setQueryCoroutineContext(Dispatchers.IO)
-                .fallbackToDestructiveMigration(false)
+                .fallbackToDestructiveMigration(true)
                 .build()
     }
 }
