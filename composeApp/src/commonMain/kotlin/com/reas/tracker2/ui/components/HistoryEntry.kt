@@ -3,10 +3,7 @@ package com.reas.tracker2.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -76,6 +73,25 @@ fun HistoryEntry(
                             onDismissRequest = { debugInfoExpanded = false },
                         ) {
                             DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        """
+                                        Track ID: ${play.metadata.asTrack.id}
+                                        Artist IDs: ${play.metadata.artists.map { it.id }.joinToString()}
+                                        ${if (play.metadata.hasAlbum) {
+                                            """
+                                        Album ID: ${play.metadata.asAlbum?.id}
+                                        Album artist IDs: ${play.metadata.albumArtists?.map { it.id }?.joinToString()}
+                                        """.trim()
+                                        } else {
+                                            ""
+                                        }}
+                                        """.trimIndent(),
+                                    )
+                                },
+                                onClick = {},
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Time played: ${play.timePlayed}") },
                                 onClick = {},
                             )
@@ -90,6 +106,7 @@ fun HistoryEntry(
                                             """
                                             ${event.timestamp}
                                                 ${event.position}
+                                                ${event.speed}x
                                                 ${event.state}
                                             """.trimIndent(),
                                         )
@@ -114,6 +131,16 @@ fun HistoryEntry(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
                     ) {
+                        DropdownMenuItem(
+                            leadingIcon = {
+                                Icon(Icons.Filled.Info, "Details")
+                            },
+                            text = { Text("Details") },
+                            onClick = {
+                                menuExpanded = false
+                                onClick()
+                            },
+                        )
                         DropdownMenuItem(
                             leadingIcon = {
                                 Icon(Icons.Filled.Edit, "Edit")

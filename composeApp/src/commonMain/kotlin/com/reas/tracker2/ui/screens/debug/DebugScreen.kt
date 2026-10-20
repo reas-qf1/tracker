@@ -13,12 +13,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.reas.tracker2.ui.navigation.ApplicationState
 import com.reas.tracker2.ui.navigation.Debug
 import com.reas.tracker2.ui.rememberAsState
+import com.reas.tracker2.ui.state
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -33,10 +35,12 @@ fun DebugScreen(
     val mediaEventLog by rememberAsState { viewModel.mediaEventLog }
 
     val verticalScrollState = rememberScrollState()
+    var previousMaxValue by state(0)
     LaunchedEffect(mediaEventLog) {
-        if (!verticalScrollState.canScrollForward) {
+        if (verticalScrollState.value >= previousMaxValue) {
             verticalScrollState.scrollTo(Int.MAX_VALUE)
         }
+        previousMaxValue = verticalScrollState.maxValue
     }
 
     Column(modifier = modifier) {
