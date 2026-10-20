@@ -8,7 +8,9 @@ import com.reas.tracker2.shared.Source
 class EventProcessorAdapterImpl(
     private val repository: Repository,
 ) : EventProcessorAdapter {
-    override suspend fun getLastPlayFromSource(source: Source) = repository.getLastPlayFromSource(source)
-
-    override suspend fun getOriginalMetadata(play: Play) = repository.getOriginalMetadata(play)
+    override suspend fun getLastPlayFromSource(source: Source): Play? {
+        val play = repository.getLastPlayFromSource(source) ?: return null
+        val metadata = repository.getOriginalMetadata(play) ?: return play
+        return play.copy(metadata = metadata)
+    }
 }

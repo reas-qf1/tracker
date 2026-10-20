@@ -292,11 +292,6 @@ data class Play(
         get() = timePlayed < EventProcessor.SKIP_MIN_DURATION
     val isSkip
         get() = timePlayed < duration / 2 && timePlayed < 4.minutes
-    val isFull
-        get() = !isNowPlaying && !isTiny && !isSkip
-
-    val isLocal
-        get() = source.client == "" && source.user == ""
 
     val key
         get() = "$client/$app/$timestamp"

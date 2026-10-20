@@ -25,7 +25,7 @@ interface Repository {
 
     suspend fun updatePlay(play: Play)
 
-    suspend fun updatePlaysEvents(plays: List<Play>)
+    suspend fun updatePlayEvents(plays: List<Play>)
 
     suspend fun deletePlay(play: Play)
 
@@ -232,7 +232,7 @@ class RoomRepository(
 
     override suspend fun updatePlay(play: Play) = db.playDao().update(play.toEntity())
 
-    override suspend fun updatePlaysEvents(plays: List<Play>) = db.playDao().updateAssociatedEvents(plays.map { it.toEntity() })
+    override suspend fun updatePlayEvents(plays: List<Play>) = db.playDao().updateAssociatedEvents(plays.map { it.toEntity() })
 
     override suspend fun getPlay(id: Uuid) = db.playDao().getPlay(id)?.toObject()
 

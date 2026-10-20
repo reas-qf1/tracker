@@ -29,7 +29,7 @@ class EventProcessor(
         events: List<Event>,
     ) {
         var play = adapter.getLastPlayFromSource(source)
-        var adjMetadata: TrackWithAlbum? = play?.let { adapter.getOriginalMetadata(play) }
+        var updatingPlay = true
 
         val eventsSorted = events.sortedBy { it.timestamp }
         if (play != null && eventsSorted[0].timestamp < play.timestamp) {
@@ -67,22 +67,21 @@ class EventProcessor(
                 play.timePlayed += event.timestamp - play.lastTimestamp
             }
 
-            val playAdjMetadata = if (adjMetadata != null) play.copy(metadata = adjMetadata) else play
-            val isNewPlay = isNewPlay(event, playAdjMetadata)
-            logger.debug { "$event $playAdjMetadata decided $isNewPlay" }
+            val isNewPlay = isNewPlay(event, play)
+            logger.debug { "$event $play decided $isNewPlay" }
 
             if (isNewPlay) {
                 if (play.lastPlaying) {
                     val position = play.lastPosition + (event.timestamp - play.lastTimestamp) * play.lastSpeed
                     play.plug(event.timestamp, position, play.lastSpeed)
                 }
-                if (adjMetadata == null) {
-                    newPlays.add(play)
-                } else {
+                if (updatingPlay) {
                     updatedPlays.add(play)
+                } else {
+                    newPlays.add(play)
                 }
                 play = Play.fromEvent(event)
-                adjMetadata = null
+                updatingPlay = false
             } else {
                 play.associatedEvents.add(event.info)
             }
@@ -90,10 +89,10 @@ class EventProcessor(
         }
 
         if (play != null) {
-            if (adjMetadata == null) {
-                newPlays.add(play)
-            } else {
+            if (updatingPlay) {
                 updatedPlays.add(play)
+            } else {
+                newPlays.add(play)
             }
         }
     }

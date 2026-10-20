@@ -91,7 +91,7 @@ class MediaEventRelay(
             logger.debug { "${newPlays.size} new plays, ${updatedPlays.size} updated plays" }
 
             repository.insertPlays(newPlays)
-            repository.updatePlaysEvents(updatedPlays)
+            repository.updatePlayEvents(updatedPlays)
             newPlays.forEach { play ->
                 repository.insertEdit(PlayEdit.new(play))
             }
