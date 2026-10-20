@@ -1,5 +1,7 @@
 package com.reas.tracker2.android
 
+import android.app.PendingIntent
+import android.app.TaskStackBuilder
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -12,11 +14,12 @@ import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import androidx.core.app.ServiceCompat
 import androidx.core.content.getSystemService
+import com.reas.tracker2.MainActivity
+import com.reas.tracker2.R
 import com.reas.tracker2.settings.Settings
 import com.reas.tracker2.settings.isScrobblingEnabled
 import com.reas.tracker2.util.InMemoryLog
 import com.reas.tracker2.util.NowPlayingNotificationManager
-import com.reas.tracker2.util.NowPlayingNotificationManagerAndroid.Companion.defaultNotificationBuilder
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import org.koin.core.component.KoinComponent
@@ -252,7 +255,23 @@ class NotifListenerService :
         ServiceCompat.startForeground(
             this,
             NotificationWrapper.PLAYING_ID,
-            notificationWrapper.notification("Now Playing", defaultNotificationBuilder),
+            notificationWrapper.notification("Now Playing") { context ->
+                setContentTitle("Nothing is playing")
+                setSmallIcon(R.drawable.ic_stat_name)
+                setShowWhen(false)
+                setOngoing(true)
+
+                val resultIntent = Intent(context, MainActivity::class.java)
+                val resultPendingIntent =
+                    TaskStackBuilder.create(context).run {
+                        addNextIntentWithParentStack(resultIntent)
+                        getPendingIntent(
+                            0,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                        )
+                    }
+                setContentIntent(resultPendingIntent)
+            },
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
             } else {
