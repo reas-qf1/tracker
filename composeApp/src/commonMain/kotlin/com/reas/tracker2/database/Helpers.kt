@@ -6,8 +6,6 @@ import androidx.room3.Relation
 import com.reas.tracker2.database.entities.*
 import com.reas.tracker2.shared.*
 import kotlin.time.Duration
-import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 data class AlbumWithData(
     @Embedded val album: AlbumEntity,
@@ -18,7 +16,7 @@ data class AlbumWithData(
     )
     val artists: List<ArtistEntity>,
 ) {
-    fun toAlbum() =
+    fun toObject() =
         Album(
             id = album.albumId,
             name = album.name,
@@ -41,28 +39,41 @@ data class TrackWithData(
     )
     val album: AlbumWithData?,
 ) {
-    fun toTrack() =
+    fun toObject() =
         Track(
             id = track.trackId,
             name = track.name,
             artists = ArtistList(artists.map { Artist(it.name, it.artistId) }, track.artists),
-            albumObject = album?.toAlbum(),
+            albumObject = album?.toObject(),
         )
 }
 
 data class ScrobbleWithData(
-    val id: Uuid,
-    @Embedded val metadata: TrackWithData,
-    val isDeleted: Boolean,
-    val timestamp: Instant,
-    val duration: Duration,
-    var timePlayed: Duration,
-    var lastPosition: Duration,
-    var lastPlaying: Boolean,
-    val sourceDevice: String,
-    val sourceApp: String,
-    val associatedEvents: MutableList<EventInfo>,
-)
+    @Embedded val scrobble: ScrobbleEntity,
+    @Relation(
+        entity = TrackEntity::class,
+        parentColumns = ["trackId"],
+        entityColumns = ["trackId"],
+    )
+    val metadata: TrackWithData,
+) {
+    fun toObject() =
+        Scrobble(
+            id = scrobble.id,
+            metadata = metadata.toObject().let { t ->
+                t.copy(
+                    artists = t.artists.copy(raw = scrobble.artists),
+                    albumObject = t.asAlbum?.copy(artists = t.albumArtists!!.copy(raw = scrobble.albumArtists!!)),
+                )
+            },
+            isDeleted = scrobble.isDeleted,
+            timestamp = scrobble.timestamp,
+            duration = scrobble.duration,
+            timePlayed = scrobble.timePlayed,
+            source = Source.user(scrobble.sourceDevice, scrobble.sourceApp),
+            associatedEvents = scrobble.associatedEvents,
+        )
+}
 
 data class ArtistWithPlayCount(
     @Embedded val artist: Artist,
@@ -79,7 +90,7 @@ data class TrackWithPlayCount(
     val playCount: Int,
 ) {
     val track: Track
-        get() = _track.toTrack()
+        get() = _track.toObject()
 }
 
 data class TrackWithTimePlayed(
@@ -87,7 +98,7 @@ data class TrackWithTimePlayed(
     val timePlayed: Duration,
 ) {
     val track: Track
-        get() = _track.toTrack()
+        get() = _track.toObject()
 }
 
 data class AlbumWithPlayCount(
@@ -95,7 +106,7 @@ data class AlbumWithPlayCount(
     val playCount: Int,
 ) {
     val album: Album
-        get() = _album.toAlbum()
+        get() = _album.toObject()
 }
 
 data class AlbumWithTimePlayed(
@@ -103,5 +114,5 @@ data class AlbumWithTimePlayed(
     val timePlayed: Duration,
 ) {
     val album: Album
-        get() = _album.toAlbum()
+        get() = _album.toObject()
 }

@@ -20,7 +20,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
         ArtistEntity::class,
         TrackArtistCrossRef::class,
         AlbumArtistCrossRef::class,
-        EditsEntity::class,
+        EditEntity::class,
     ],
     version = 1,
     exportSchema = false,

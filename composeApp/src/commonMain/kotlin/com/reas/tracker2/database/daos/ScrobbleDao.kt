@@ -31,17 +31,20 @@ interface ScrobbleDao {
     @Delete
     suspend fun delete(play: ScrobbleEntity)
 
+    @Transaction
     @Query("SELECT * FROM scrobbles WHERE id = :id")
-    suspend fun getScrobble(id: Uuid): ScrobbleEntity?
+    suspend fun getScrobble(id: Uuid): ScrobbleWithData?
 
+    @Transaction
     @Query("SELECT * FROM scrobbles WHERE sourceDevice = :device AND sourceApp = :app ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLastScrobbleFromSource(device: String?, app: String?): ScrobbleEntity?
+    suspend fun getLastScrobbleFromSource(device: String?, app: String?): ScrobbleWithData?
 
+    @Transaction
     @Query("UPDATE scrobbles SET isDeleted = 1 WHERE id = :id")
     suspend fun markScrobbleDeleted(id: Uuid)
 
     @Query("SELECT * FROM scrobbles WHERE lastPlaying = 1 AND isDeleted = 0")
-    fun getNowPlaying(): Flow<List<ScrobbleEntity>>
+    fun getNowPlaying(): Flow<List<ScrobbleWithData>>
 
     @Transaction
     @RewriteQueriesToDropUnusedColumns

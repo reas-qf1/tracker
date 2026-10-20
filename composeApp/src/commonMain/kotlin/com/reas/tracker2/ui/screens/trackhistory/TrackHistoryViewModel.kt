@@ -14,7 +14,7 @@ class TrackHistoryViewModel(
 ) : TrackerViewModel() {
     fun history(track: Track) =
         pagingDataFlow { repository.getTrackHistory(track) }
-            .mapElements { entity -> repository.playEntityToObject(entity) }
+            .mapElements { entity -> entity.toObject() }
 
     fun playCount(track: Track) =
         repository

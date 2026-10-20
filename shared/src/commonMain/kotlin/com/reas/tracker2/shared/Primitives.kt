@@ -1,7 +1,6 @@
 package com.reas.tracker2.shared
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -15,10 +14,7 @@ data class ArtistList(
     val artists: List<Artist>,
     val raw: String,
 ) : List<Artist> {
-    constructor(raw: String) : this(
-        raw.split(" & ").map { Artist(it) },
-        raw,
-    )
+    val ids = artists.map { it.id }.sorted()
 
     override fun toString(): String = raw
 
@@ -53,7 +49,7 @@ data class ArtistList(
 @Serializable
 data class Artist(
     val name: String,
-    @Transient val id: Long = -1,
+    val id: Long,
 ) {
     override fun equals(other: Any?): Boolean = other is Artist && name == other.name
 
@@ -64,7 +60,7 @@ data class Artist(
 data class Album(
     val name: String,
     val artists: ArtistList,
-    @Transient val id: Long = -1,
+    val id: Long,
 ) {
     val artistsAsString: String
         get() = artists.raw
@@ -83,15 +79,8 @@ data class Track(
     private val albumObject: Album?,
     val name: String,
     val artists: ArtistList,
-    @Transient val id: Long = -1,
+    val id: Long,
 ) {
-    constructor(track: String, artists: String, album: String?, albumArtists: String?) :
-        this(
-            album?.let { Album(album, ArtistList(albumArtists ?: artists)) },
-            track,
-            ArtistList(artists),
-        )
-
     val albumArtists: ArtistList?
         get() = albumObject?.artists
     val artistsAsString: String
@@ -125,6 +114,14 @@ data class Track(
         return result
     }
 }
+
+@Serializable
+data class RawMetadata(
+    val track: String,
+    val artists: String,
+    val album: String?,
+    val albumArtists: String?,
+)
 
 @Serializable
 enum class EventState {

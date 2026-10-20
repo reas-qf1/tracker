@@ -34,7 +34,7 @@ class HistoryScreenViewModel(
         get() =
             pagingDataFlow { repository.getRecentScrobbles() }
                 .mapElements { entity ->
-                    HistoryEntry.Play(repository.playEntityToObject(entity))
+                    HistoryEntry.Play(entity.toObject())
                 }.map {
                     it.insertSeparators { before, after ->
                         if (before == null) return@insertSeparators null

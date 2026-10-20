@@ -11,7 +11,7 @@ import kotlin.uuid.Uuid
     tableName = "edits",
     indices = [Index(value = ["scrobbleId", "timestamp"], unique = false)],
 )
-data class EditsEntity(
+data class EditEntity(
     @PrimaryKey val id: Uuid,
     val scrobbleId: Uuid,
     val trackId: Long,

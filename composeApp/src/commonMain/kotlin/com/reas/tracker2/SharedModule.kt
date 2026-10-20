@@ -2,7 +2,6 @@ package com.reas.tracker2
 
 import com.reas.tracker2.database.AppDatabase
 import com.reas.tracker2.database.Repository
-import com.reas.tracker2.database.RoomRepository
 import com.reas.tracker2.network.KtorNetworkRepository
 import com.reas.tracker2.network.NetworkRepository
 import com.reas.tracker2.network.httpClient
@@ -26,6 +25,7 @@ import com.reas.tracker2.ui.sheets.edit.EditBottomSheetViewModel
 import com.reas.tracker2.ui.sheets.info.InfoBottomSheetsViewModel
 import com.reas.tracker2.util.EventProcessorAdapterImpl
 import com.reas.tracker2.util.InMemoryLog
+import com.reas.tracker2.util.RawMetadataRegistrer
 import com.reas.tracker2.util.SecretManager
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
@@ -36,8 +36,8 @@ val sharedModule = module {
     singleOf(::createDataStore)
     singleOf(::DataStoreSettings) bind Settings::class
     single {
-        RoomRepository(AppDatabase.getDatabase(get()))
-    } bind Repository::class
+        Repository(AppDatabase.getDatabase(get()))
+    }
     singleOf(::KtorNetworkRepository) bind NetworkRepository::class
     singleOf(::httpClient)
     singleOf(::landscapistInstance)
@@ -47,6 +47,7 @@ val sharedModule = module {
     single { HolePlugger() }
     singleOf(::InMemoryLog)
     singleOf(::SecretManager)
+    singleOf(::RawMetadataRegistrer)
 
     viewModelOf(::HistoryScreenViewModel)
     viewModelOf(::ChartsScreenViewModel)

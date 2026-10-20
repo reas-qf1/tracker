@@ -1,6 +1,8 @@
 package com.reas.tracker2.database
 
 import androidx.paging.PagingSource
+import androidx.room3.useReaderConnection
+import androidx.room3.useWriterConnection
 import com.reas.tracker2.database.entities.*
 import com.reas.tracker2.shared.*
 import kotlinx.coroutines.flow.Flow
@@ -8,156 +10,15 @@ import kotlinx.coroutines.flow.map
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
-interface Repository {
-    suspend fun getArtist(id: Long): Artist
-
-    suspend fun getArtists(ids: List<Long>): List<Artist>
-
-    suspend fun getAlbum(id: Long): Album
-
-    suspend fun getTrack(id: Long): Track
-
-    suspend fun getOrInsertTrack(track: Track): Long
-
-    suspend fun insertScrobble(scrobble: Scrobble): Long
-
-    suspend fun insertScrobbles(scrobbles: List<Scrobble>)
-
-    suspend fun updateScrobbles(scrobble: Scrobble)
-
-    suspend fun updateScrobbleEvents(scrobbles: List<Scrobble>)
-
-    suspend fun deleteScrobble(scrobble: Scrobble)
-
-    suspend fun getScrobble(id: Uuid): Scrobble?
-
-    suspend fun getLastScrobbleFromSource(source: Source): Scrobble?
-
-    suspend fun getOriginalMetadata(scrobble: Scrobble): Track?
-
-    suspend fun markScrobbleDeleted(scrobble: Scrobble)
-
-    fun getNowPlaying(): Flow<List<Scrobble>>
-
-    fun getRecentScrobbles(): PagingSource<Int, ScrobbleWithData>
-
-    fun getArtistPlayCount(artist: Artist, period: TimePeriod): Flow<Int>
-
-    fun getArtistTimePlayed(artist: Artist, period: TimePeriod): Flow<Duration>
-
-    fun getMostPlayedArtists(period: TimePeriod): PagingSource<Int, ArtistWithTimePlayed>
-
-    fun getMostPlayedArtists(period: TimePeriod, limit: Int): Flow<List<ArtistWithTimePlayed>>
-
-    fun getMostPlayedArtistsByPlayCount(period: TimePeriod): PagingSource<Int, ArtistWithPlayCount>
-
-    fun getArtistRank(artist: Artist, period: TimePeriod): Flow<Int>
-
-    fun getArtistRankByPlayCount(artist: Artist, period: TimePeriod): Flow<Int>
-
-    fun getTrackPlayCount(track: Track, period: TimePeriod): Flow<Int>
-
-    fun getTrackTimePlayed(track: Track, period: TimePeriod): Flow<Duration>
-
-    fun getTrackHistory(track: Track): PagingSource<Int, ScrobbleWithData>
-
-    fun getMostPlayedTracks(period: TimePeriod): PagingSource<Int, TrackWithTimePlayed>
-
-    fun getMostPlayedTracks(period: TimePeriod, limit: Int): Flow<List<TrackWithTimePlayed>>
-
-    fun getMostPlayedTracksByPlayCount(period: TimePeriod): PagingSource<Int, TrackWithPlayCount>
-
-    fun getMostPlayedTracksFromArtist(artist: Artist, period: TimePeriod): PagingSource<Int, TrackWithTimePlayed>
-
-    fun getMostPlayedTracksFromArtist(artist: Artist, period: TimePeriod, limit: Int): Flow<List<TrackWithTimePlayed>>
-
-    fun getMostPlayedTracksFromArtistByPlayCount(artist: Artist, period: TimePeriod): PagingSource<Int, TrackWithPlayCount>
-
-    fun getMostPlayedTracksFromArtistByPlayCount(artist: Artist, period: TimePeriod, limit: Int): Flow<List<TrackWithPlayCount>>
-
-    fun getMostPlayedTracksFromAlbum(album: Album, period: TimePeriod): PagingSource<Int, TrackWithTimePlayed>
-
-    fun getMostPlayedTracksFromAlbum(album: Album, period: TimePeriod, limit: Int): Flow<List<TrackWithTimePlayed>>
-
-    fun getMostPlayedTracksFromAlbumByPlayCount(album: Album, period: TimePeriod): PagingSource<Int, TrackWithPlayCount>
-
-    fun getMostPlayedTracksFromAlbumByPlayCount(album: Album, period: TimePeriod, limit: Int): Flow<List<TrackWithPlayCount>>
-
-    fun getAlbumRank(album: Album, period: TimePeriod): Flow<Int>
-
-    fun getAlbumRankByPlayCount(album: Album, period: TimePeriod): Flow<Int>
-
-    fun getAlbumPlayCount(album: Album, period: TimePeriod): Flow<Int>
-
-    fun getAlbumTimePlayed(album: Album, period: TimePeriod): Flow<Duration>
-
-    fun getMostPlayedAlbums(period: TimePeriod): PagingSource<Int, AlbumWithTimePlayed>
-
-    fun getMostPlayedAlbums(period: TimePeriod, limit: Int): Flow<List<AlbumWithTimePlayed>>
-
-    fun getMostPlayedAlbumsByPlayCount(period: TimePeriod): PagingSource<Int, AlbumWithPlayCount>
-
-    fun getMostPlayedAlbumsFromArtist(artist: Artist, period: TimePeriod): PagingSource<Int, AlbumWithTimePlayed>
-
-    fun getMostPlayedAlbumsFromArtist(artist: Artist, period: TimePeriod, limit: Int): Flow<List<AlbumWithTimePlayed>>
-
-    fun getMostPlayedAlbumsFromArtistByPlayCount(artist: Artist, period: TimePeriod): PagingSource<Int, AlbumWithPlayCount>
-
-    fun getMostPlayedAlbumsFromArtistByPlayCount(artist: Artist, period: TimePeriod, limit: Int): Flow<List<AlbumWithPlayCount>>
-
-    fun getTrackRank(track: Track, period: TimePeriod): Flow<Int>
-
-    fun getTrackRankByPlayCount(track: Track, period: TimePeriod): Flow<Int>
-
-    suspend fun insertEdit(edit: ScrobbleEdit): Long
-
-    suspend fun updateEdit(edit: ScrobbleEdit)
-
-    suspend fun deleteEdit(edit: ScrobbleEdit)
-
-    fun getPlayCount(): Flow<Int>
-
-    fun getEditCount(): Flow<Int>
-
-    // oh my fucking god
-    // TODO get rid of this when the paging library becomes good
-    fun playEntityToObject(entity: ScrobbleWithData) =
-        Scrobble(
-            id = entity.id,
-            metadata = entity.metadata.toTrack(),
-            isDeleted = entity.isDeleted,
-            timestamp = entity.timestamp,
-            duration = entity.duration,
-            timePlayed = entity.timePlayed,
-            source = Source.user(entity.sourceDevice, entity.sourceApp),
-            associatedEvents = entity.associatedEvents,
-        )
-}
-
-class RoomRepository(
+class Repository(
     private val db: AppDatabase,
-) : Repository {
+) {
     private fun ArtistEntity.toObject() = Artist(name, artistId)
 
-    private suspend fun AlbumEntity.toObject() =
-        Album(
-            name,
-            ArtistList(getArtists(artistIds), artists),
-            albumId,
-        )
-
-    private suspend fun TrackEntity.toObject() =
-        Track(
-            albumObject = albumId?.let { getAlbum(it) },
-            name = name,
-            artists = ArtistList(getArtists(artistIds), artists),
-            id = trackId,
-        )
-
-    private suspend fun Scrobble.toEntity() =
+    private fun Scrobble.toEntity() =
         ScrobbleEntity(
             id = id,
-            trackId = getOrInsertTrack(metadata),
+            trackId = metadata.id,
             isDeleted = isDeleted,
             artists = artistsAsString,
             albumArtists = albumArtistsAsString,
@@ -171,25 +32,8 @@ class RoomRepository(
             associatedEvents = associatedEvents,
         )
 
-    private suspend fun ScrobbleEntity.toObject() =
-        Scrobble(
-            id = id,
-            metadata = getTrack(trackId).let { t ->
-                t.copy(
-                    artists = t.artists.copy(raw = artists),
-                    albumObject = t.asAlbum?.copy(artists = t.albumArtists!!.copy(raw = albumArtists!!)),
-                )
-            },
-            isDeleted = isDeleted,
-            timestamp = timestamp,
-            duration = duration,
-            timePlayed = timePlayed,
-            source = Source.user(sourceDevice, sourceApp),
-            associatedEvents = associatedEvents,
-        )
-
     private fun ScrobbleEdit.toEntity() =
-        EditsEntity(
+        EditEntity(
             id = id,
             scrobbleId = scrobbleId,
             trackId = track.id,
@@ -197,155 +41,178 @@ class RoomRepository(
             reason = reason,
         )
 
-    private suspend fun EditsEntity.toObject() =
-        ScrobbleEdit(
-            id = id,
-            scrobbleId = scrobbleId,
-            track = getTrack(trackId),
-            timestamp = timestamp,
-            reason = reason,
+    suspend fun <T> readTransaction(block: suspend () -> T): T = db.useReaderConnection { block() }
+
+    suspend fun <T> writeTransaction(block: suspend () -> T): T = db.useWriterConnection { block() }
+
+    suspend fun insertTrack(name: String, artists: ArtistList, album: Album?): Long =
+        db.trackDao().insertTrack(
+            TrackEntity(
+                name = name,
+                albumId = album?.id,
+                artists = artists.raw,
+                artistIds = artists.ids,
+            ),
         )
 
-    override suspend fun getArtist(id: Long) = db.trackDao().getArtist(id).toObject()
-
-    override suspend fun getArtists(ids: List<Long>) = db.trackDao().getArtists(ids).map { it.toObject() }
-
-    override suspend fun getAlbum(id: Long) = db.trackDao().getAlbum(id).toObject()
-
-    override suspend fun getTrack(id: Long) = db.trackDao().getTrack(id).toObject()
-
-    override suspend fun getOrInsertTrack(track: Track) =
-        db.trackDao().getOrInsertTrack(
-            track.name,
-            track.artists,
-            track.asAlbum?.name,
-            track.asAlbum?.artists,
+    suspend fun insertAlbum(name: String, artists: ArtistList): Long =
+        db.trackDao().insertAlbum(
+            AlbumEntity(name = name, artists = artists.raw, artistIds = artists.ids),
         )
 
-    override suspend fun insertScrobble(scrobble: Scrobble) = db.scrobbleDao().insert(scrobble.toEntity())
+    suspend fun insertArtists(artists: List<String>): List<Long> = db.trackDao().insertArtists(artists.map { ArtistEntity(name = it) })
 
-    override suspend fun insertScrobbles(scrobbles: List<Scrobble>) = db.scrobbleDao().insertBatch(scrobbles.map { it.toEntity() })
+    suspend fun associateArtistsWithAlbum(albumId: Long, artists: ArtistList) =
+        db.trackDao().insertAlbumArtistCrossRefs(
+            artists.map { artist ->
+                AlbumArtistCrossRef(albumId, artist.id)
+            },
+        )
 
-    override suspend fun deleteScrobble(scrobble: Scrobble) = db.scrobbleDao().delete(scrobble.toEntity())
+    suspend fun associateArtistsWithTrack(trackId: Long, artists: ArtistList) =
+        db.trackDao().insertTrackArtistCrossRefs(
+            artists.map { artist ->
+                TrackArtistCrossRef(trackId, artist.id)
+            },
+        )
 
-    override suspend fun updateScrobbles(scrobble: Scrobble) = db.scrobbleDao().update(scrobble.toEntity())
+    suspend fun getArtists(names: List<String>): List<Artist> = db.trackDao().getArtists(names).map { it.toObject() }
 
-    override suspend fun updateScrobbleEvents(scrobbles: List<Scrobble>) =
-        db.scrobbleDao().updateAssociatedEvents(scrobbles.map { it.toEntity() })
+    suspend fun getAlbum(name: String, artists: ArtistList): Album? = db.trackDao().getAlbum(name, artists.ids)?.toObject()
 
-    override suspend fun getScrobble(id: Uuid) = db.scrobbleDao().getScrobble(id)?.toObject()
+    suspend fun getTrack(name: String, artists: ArtistList, album: Album?): Track? =
+        db.trackDao().getTrack(name, artists.ids, album?.id)?.toObject()
 
-    override suspend fun getLastScrobbleFromSource(source: Source) =
+    suspend fun getTrackById(id: Long): Track = db.trackDao().getTrackById(id).toObject()
+
+    suspend fun insertScrobble(scrobble: Scrobble): Long = db.scrobbleDao().insert(scrobble.toEntity())
+
+    suspend fun insertScrobbles(scrobbles: List<Scrobble>) = db.scrobbleDao().insertBatch(scrobbles.map { it.toEntity() })
+
+    suspend fun deleteScrobble(scrobble: Scrobble) = db.scrobbleDao().delete(scrobble.toEntity())
+
+    suspend fun updateScrobbles(scrobble: Scrobble) = db.scrobbleDao().update(scrobble.toEntity())
+
+    suspend fun updateScrobbleEvents(scrobbles: List<Scrobble>) = db.scrobbleDao().updateAssociatedEvents(scrobbles.map { it.toEntity() })
+
+    suspend fun getScrobble(id: Uuid): Scrobble? = db.scrobbleDao().getScrobble(id)?.toObject()
+
+    suspend fun getLastScrobbleFromSource(source: Source): Scrobble? =
         db.scrobbleDao().getLastScrobbleFromSource(source.client, source.app)?.toObject()
 
-    override suspend fun getOriginalMetadata(scrobble: Scrobble) = db.editsDao().getOriginalMetadata(scrobble.id)?.let { getTrack(it) }
+    suspend fun getOriginalMetadata(scrobble: Scrobble): Track? = db.editsDao().getOriginalMetadata(scrobble.id)?.let { getTrackById(it) }
 
-    override suspend fun markScrobbleDeleted(scrobble: Scrobble) = db.scrobbleDao().markScrobbleDeleted(scrobble.id)
+    suspend fun markScrobbleDeleted(scrobble: Scrobble) = db.scrobbleDao().markScrobbleDeleted(scrobble.id)
 
-    override fun getNowPlaying() = db.scrobbleDao().getNowPlaying().map { it.map { it.toObject() } }
+    fun getNowPlaying(): Flow<List<Scrobble>> = db.scrobbleDao().getNowPlaying().map { it.map { it.toObject() } }
 
-    override fun getRecentScrobbles() = db.scrobbleDao().getRecentScrobbles()
+    fun getRecentScrobbles(): PagingSource<Int, ScrobbleWithData> = db.scrobbleDao().getRecentScrobbles()
 
-    override fun getArtistPlayCount(artist: Artist, period: TimePeriod) =
+    fun getArtistPlayCount(artist: Artist, period: TimePeriod): Flow<Int> =
         db.scrobbleDao().getArtistPlayCount(artist.id, period.start, period.end)
 
-    override fun getArtistTimePlayed(artist: Artist, period: TimePeriod) =
+    fun getArtistTimePlayed(artist: Artist, period: TimePeriod): Flow<Duration> =
         db.scrobbleDao().getArtistTimePlayed(artist.id, period.start, period.end)
 
-    override fun getMostPlayedArtists(period: TimePeriod) = db.scrobbleDao().getMostPlayedArtists(period.start, period.end)
+    fun getMostPlayedArtists(period: TimePeriod): PagingSource<Int, ArtistWithTimePlayed> =
+        db.scrobbleDao().getMostPlayedArtists(period.start, period.end)
 
-    override fun getMostPlayedArtists(period: TimePeriod, limit: Int) =
+    fun getMostPlayedArtists(period: TimePeriod, limit: Int): Flow<List<ArtistWithTimePlayed>> =
         db.scrobbleDao().getMostPlayedArtists(period.start, period.end, limit)
 
-    override fun getMostPlayedArtistsByPlayCount(period: TimePeriod) =
+    fun getMostPlayedArtistsByPlayCount(period: TimePeriod): PagingSource<Int, ArtistWithPlayCount> =
         db.scrobbleDao().getMostPlayedArtistsByPlayCount(period.start, period.end)
 
-    override fun getArtistRank(artist: Artist, period: TimePeriod) = db.scrobbleDao().getArtistRank(artist.id, period.start, period.end)
+    fun getArtistRank(artist: Artist, period: TimePeriod): Flow<Int> = db.scrobbleDao().getArtistRank(artist.id, period.start, period.end)
 
-    override fun getArtistRankByPlayCount(artist: Artist, period: TimePeriod) =
+    fun getArtistRankByPlayCount(artist: Artist, period: TimePeriod): Flow<Int> =
         db.scrobbleDao().getArtistRankByPlayCount(artist.id, period.start, period.end)
 
-    override fun getAlbumPlayCount(album: Album, period: TimePeriod) =
+    fun getAlbumPlayCount(album: Album, period: TimePeriod): Flow<Int> =
         db.scrobbleDao().getAlbumPlayCount(album.id, period.start, period.end)
 
-    override fun getAlbumTimePlayed(album: Album, period: TimePeriod) =
+    fun getAlbumTimePlayed(album: Album, period: TimePeriod): Flow<Duration> =
         db.scrobbleDao().getAlbumTimePlayed(album.id, period.start, period.end)
 
-    override fun getMostPlayedAlbums(period: TimePeriod) = db.scrobbleDao().getMostPlayedAlbums(period.start, period.end)
+    fun getMostPlayedAlbums(period: TimePeriod): PagingSource<Int, AlbumWithTimePlayed> =
+        db.scrobbleDao().getMostPlayedAlbums(period.start, period.end)
 
-    override fun getMostPlayedAlbums(period: TimePeriod, limit: Int) = db.scrobbleDao().getMostPlayedAlbums(period.start, period.end, limit)
+    fun getMostPlayedAlbums(period: TimePeriod, limit: Int): Flow<List<AlbumWithTimePlayed>> =
+        db.scrobbleDao().getMostPlayedAlbums(period.start, period.end, limit)
 
-    override fun getMostPlayedAlbumsByPlayCount(period: TimePeriod) =
+    fun getMostPlayedAlbumsByPlayCount(period: TimePeriod): PagingSource<Int, AlbumWithPlayCount> =
         db.scrobbleDao().getMostPlayedAlbumsByPlayCount(period.start, period.end)
 
-    override fun getMostPlayedAlbumsFromArtist(artist: Artist, period: TimePeriod) =
+    fun getMostPlayedAlbumsFromArtist(artist: Artist, period: TimePeriod): PagingSource<Int, AlbumWithTimePlayed> =
         db.scrobbleDao().getMostPlayedAlbumsFromArtist(artist.id, period.start, period.end)
 
-    override fun getMostPlayedAlbumsFromArtist(artist: Artist, period: TimePeriod, limit: Int) =
+    fun getMostPlayedAlbumsFromArtist(artist: Artist, period: TimePeriod, limit: Int): Flow<List<AlbumWithTimePlayed>> =
         db.scrobbleDao().getMostPlayedAlbumsFromArtist(artist.id, period.start, period.end, limit)
 
-    override fun getMostPlayedAlbumsFromArtistByPlayCount(artist: Artist, period: TimePeriod) =
+    fun getMostPlayedAlbumsFromArtistByPlayCount(artist: Artist, period: TimePeriod): PagingSource<Int, AlbumWithPlayCount> =
         db.scrobbleDao().getMostPlayedAlbumsFromArtistByPlayCount(artist.id, period.start, period.end)
 
-    override fun getMostPlayedAlbumsFromArtistByPlayCount(artist: Artist, period: TimePeriod, limit: Int) =
+    fun getMostPlayedAlbumsFromArtistByPlayCount(artist: Artist, period: TimePeriod, limit: Int): Flow<List<AlbumWithPlayCount>> =
         db.scrobbleDao().getMostPlayedAlbumsFromArtistByPlayCount(artist.id, period.start, period.end, limit)
 
-    override fun getAlbumRank(album: Album, period: TimePeriod) = db.scrobbleDao().getAlbumRank(album.id, period.start, period.end)
+    fun getAlbumRank(album: Album, period: TimePeriod): Flow<Int> = db.scrobbleDao().getAlbumRank(album.id, period.start, period.end)
 
-    override fun getAlbumRankByPlayCount(album: Album, period: TimePeriod) =
+    fun getAlbumRankByPlayCount(album: Album, period: TimePeriod): Flow<Int> =
         db.scrobbleDao().getAlbumRankByPlayCount(album.id, period.start, period.end)
 
-    override fun getTrackPlayCount(track: Track, period: TimePeriod) =
+    fun getTrackPlayCount(track: Track, period: TimePeriod): Flow<Int> =
         db.scrobbleDao().getTrackPlayCount(track.id, period.start, period.end)
 
-    override fun getTrackTimePlayed(track: Track, period: TimePeriod) =
+    fun getTrackTimePlayed(track: Track, period: TimePeriod): Flow<Duration> =
         db.scrobbleDao().getTrackTimePlayed(track.id, period.start, period.end)
 
-    override fun getTrackHistory(track: Track) = db.scrobbleDao().getTrackHistory(track.id)
+    fun getTrackHistory(track: Track): PagingSource<Int, ScrobbleWithData> = db.scrobbleDao().getTrackHistory(track.id)
 
-    override fun getMostPlayedTracks(period: TimePeriod) = db.scrobbleDao().getMostPlayedTracks(period.start, period.end)
+    fun getMostPlayedTracks(period: TimePeriod): PagingSource<Int, TrackWithTimePlayed> =
+        db.scrobbleDao().getMostPlayedTracks(period.start, period.end)
 
-    override fun getMostPlayedTracks(period: TimePeriod, limit: Int) = db.scrobbleDao().getMostPlayedTracks(period.start, period.end, limit)
+    fun getMostPlayedTracks(period: TimePeriod, limit: Int): Flow<List<TrackWithTimePlayed>> =
+        db.scrobbleDao().getMostPlayedTracks(period.start, period.end, limit)
 
-    override fun getMostPlayedTracksByPlayCount(period: TimePeriod) =
+    fun getMostPlayedTracksByPlayCount(period: TimePeriod): PagingSource<Int, TrackWithPlayCount> =
         db.scrobbleDao().getMostPlayedTracksByPlayCount(period.start, period.end)
 
-    override fun getMostPlayedTracksFromArtist(artist: Artist, period: TimePeriod) =
+    fun getMostPlayedTracksFromArtist(artist: Artist, period: TimePeriod): PagingSource<Int, TrackWithTimePlayed> =
         db.scrobbleDao().getMostPlayedTracksFromArtist(artist.id, period.start, period.end)
 
-    override fun getMostPlayedTracksFromArtistByPlayCount(artist: Artist, period: TimePeriod) =
+    fun getMostPlayedTracksFromArtistByPlayCount(artist: Artist, period: TimePeriod): PagingSource<Int, TrackWithPlayCount> =
         db.scrobbleDao().getMostPlayedTracksFromArtistByPlayCount(artist.id, period.start, period.end)
 
-    override fun getMostPlayedTracksFromAlbum(album: Album, period: TimePeriod) =
+    fun getMostPlayedTracksFromAlbum(album: Album, period: TimePeriod): PagingSource<Int, TrackWithTimePlayed> =
         db.scrobbleDao().getMostPlayedTracksFromAlbum(album.id, period.start, period.end)
 
-    override fun getMostPlayedTracksFromAlbumByPlayCount(album: Album, period: TimePeriod) =
+    fun getMostPlayedTracksFromAlbumByPlayCount(album: Album, period: TimePeriod): PagingSource<Int, TrackWithPlayCount> =
         db.scrobbleDao().getMostPlayedTracksFromAlbumByPlayCount(album.id, period.start, period.end)
 
-    override fun getMostPlayedTracksFromArtist(artist: Artist, period: TimePeriod, limit: Int) =
+    fun getMostPlayedTracksFromArtist(artist: Artist, period: TimePeriod, limit: Int): Flow<List<TrackWithTimePlayed>> =
         db.scrobbleDao().getMostPlayedTracksFromArtist(artist.id, period.start, period.end, limit)
 
-    override fun getMostPlayedTracksFromArtistByPlayCount(artist: Artist, period: TimePeriod, limit: Int) =
+    fun getMostPlayedTracksFromArtistByPlayCount(artist: Artist, period: TimePeriod, limit: Int): Flow<List<TrackWithPlayCount>> =
         db.scrobbleDao().getMostPlayedTracksFromArtistByPlayCount(artist.id, period.start, period.end, limit)
 
-    override fun getMostPlayedTracksFromAlbum(album: Album, period: TimePeriod, limit: Int) =
+    fun getMostPlayedTracksFromAlbum(album: Album, period: TimePeriod, limit: Int): Flow<List<TrackWithTimePlayed>> =
         db.scrobbleDao().getMostPlayedTracksFromAlbum(album.id, period.start, period.end, limit)
 
-    override fun getMostPlayedTracksFromAlbumByPlayCount(album: Album, period: TimePeriod, limit: Int) =
+    fun getMostPlayedTracksFromAlbumByPlayCount(album: Album, period: TimePeriod, limit: Int): Flow<List<TrackWithPlayCount>> =
         db.scrobbleDao().getMostPlayedTracksFromAlbumByPlayCount(album.id, period.start, period.end, limit)
 
-    override fun getTrackRank(track: Track, period: TimePeriod) = db.scrobbleDao().getTrackRank(track.id, period.start, period.end)
+    fun getTrackRank(track: Track, period: TimePeriod): Flow<Int> = db.scrobbleDao().getTrackRank(track.id, period.start, period.end)
 
-    override fun getTrackRankByPlayCount(track: Track, period: TimePeriod) =
+    fun getTrackRankByPlayCount(track: Track, period: TimePeriod): Flow<Int> =
         db.scrobbleDao().getTrackRankByPlayCount(track.id, period.start, period.end)
 
-    override suspend fun insertEdit(edit: ScrobbleEdit) = db.editsDao().insert(edit.toEntity())
+    suspend fun insertEdit(edit: ScrobbleEdit) = db.editsDao().insert(edit.toEntity())
 
-    override suspend fun updateEdit(edit: ScrobbleEdit) = db.editsDao().update(edit.toEntity())
+    suspend fun updateEdit(edit: ScrobbleEdit) = db.editsDao().update(edit.toEntity())
 
-    override suspend fun deleteEdit(edit: ScrobbleEdit) = db.editsDao().delete(edit.toEntity())
+    suspend fun deleteEdit(edit: ScrobbleEdit) = db.editsDao().delete(edit.toEntity())
 
-    override fun getPlayCount() = db.scrobbleDao().getPlayCount()
+    fun getPlayCount(): Flow<Int> = db.scrobbleDao().getPlayCount()
 
-    override fun getEditCount() = db.editsDao().getEditCount()
+    fun getEditCount(): Flow<Int> = db.editsDao().getEditCount()
 }
