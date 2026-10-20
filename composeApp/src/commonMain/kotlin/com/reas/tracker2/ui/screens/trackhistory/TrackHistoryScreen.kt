@@ -25,7 +25,7 @@ fun TrackHistoryScreen(
 ) {
     val track = screen.track
 
-    val trackPlays by rememberAsState { viewModel.trackPlays(track) }
+    val playCount by rememberAsState { viewModel.playCount(track) }
     val history = rememberAsPagingItems { viewModel.history(track) }
     val scrollState = viewModel.scrollState
 
@@ -37,7 +37,7 @@ fun TrackHistoryScreen(
         header = {
             item(key = "header") {
                 Text(
-                    "Plays: $trackPlays",
+                    "Plays: $playCount",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(start = 10.dp, bottom = 10.dp),
                 )
@@ -46,17 +46,17 @@ fun TrackHistoryScreen(
         modifier = modifier,
     ) { _, scrobble ->
         HistoryEntry(
-            play = scrobble,
+            scrobble = scrobble,
             modifier = Modifier.padding(5.dp).height(84.dp),
             imageUrl = { viewModel.getImageUrl(scrobble) },
             onClick = {
                 applicationState.navigate(InfoBottomSheet(track = scrobble.metadata))
             },
             onDelete = {
-                applicationState.navigate(Delete(play = scrobble))
+                applicationState.navigate(Delete(scrobble = scrobble))
             },
             onEdit = {
-                applicationState.navigate(EditBottomSheet(play = scrobble))
+                applicationState.navigate(EditBottomSheet(scrobble = scrobble))
             },
         )
     }

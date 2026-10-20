@@ -6,8 +6,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
 import com.reas.tracker2.shared.Album
 import com.reas.tracker2.shared.Artist
-import com.reas.tracker2.shared.Play
-import com.reas.tracker2.shared.TrackWithAlbum
+import com.reas.tracker2.shared.Scrobble
+import com.reas.tracker2.shared.Track
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jetbrains.compose.resources.StringResource
@@ -86,7 +86,7 @@ object History : ScreenRoute() {
 
 @Serializable
 data class TrackHistory(
-    val track: TrackWithAlbum,
+    val track: Track,
 ) : ScreenRoute() {
     @Transient override val screenState = screenState("${track.artistsAsString} - ${track.name}")
 
@@ -136,7 +136,7 @@ data class AlbumInfo(
 
 @Serializable
 data class TrackInfo(
-    val track: TrackWithAlbum,
+    val track: Track,
 ) : ScreenRoute() {
     @Transient override val screenState = screenState("${track.artistsAsString} - ${track.name}")
 
@@ -147,12 +147,12 @@ data class TrackInfo(
 data class InfoBottomSheet(
     val artist: Artist? = null,
     val album: Album? = null,
-    val track: TrackWithAlbum? = null,
+    val track: Track? = null,
 ) : DialogRoute()
 
 @Serializable
 data class EditBottomSheet(
-    val play: Play,
+    val scrobble: Scrobble,
 ) : DialogRoute()
 
 @Serializable
@@ -162,5 +162,5 @@ data class Error(
 
 @Serializable
 data class Delete(
-    val play: Play,
+    val scrobble: Scrobble,
 ) : DialogRoute()

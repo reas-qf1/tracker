@@ -4,7 +4,7 @@ import com.reas.tracker2.database.Repository
 import com.reas.tracker2.shared.Album
 import com.reas.tracker2.shared.Artist
 import com.reas.tracker2.shared.TimePeriod
-import com.reas.tracker2.shared.TrackWithAlbum
+import com.reas.tracker2.shared.Track
 import com.reas.tracker2.ui.TrackerViewModel
 import com.reas.tracker2.util.toDisplayString
 import kotlinx.coroutines.flow.map
@@ -12,9 +12,9 @@ import kotlinx.coroutines.flow.map
 class InfoBottomSheetsViewModel(
     private val repository: Repository,
 ) : TrackerViewModel() {
-    fun artistPlays(artist: Artist) =
+    fun artistPlayCount(artist: Artist) =
         repository
-            .getArtistPlays(artist, TimePeriod.ALLTIME)
+            .getArtistPlayCount(artist, TimePeriod.ALLTIME)
             .map { it.toString() }
             .asStringStateFlow()
 
@@ -24,21 +24,21 @@ class InfoBottomSheetsViewModel(
             .map { it.toDisplayString() }
             .asStringStateFlow()
 
-    fun trackPlays(track: TrackWithAlbum) =
+    fun trackPlayCount(track: Track) =
         repository
-            .getTrackPlays(track, TimePeriod.ALLTIME)
+            .getTrackPlayCount(track, TimePeriod.ALLTIME)
             .map { it.toString() }
             .asStringStateFlow()
 
-    fun trackTimePlayed(track: TrackWithAlbum) =
+    fun trackTimePlayed(track: Track) =
         repository
             .getTrackTimePlayed(track, TimePeriod.ALLTIME)
             .map { it.toDisplayString() }
             .asStringStateFlow()
 
-    fun albumPlays(album: Album) =
+    fun albumPlayCount(album: Album) =
         repository
-            .getAlbumPlays(album, TimePeriod.ALLTIME)
+            .getAlbumPlayCount(album, TimePeriod.ALLTIME)
             .map { it.toString() }
             .asStringStateFlow()
 

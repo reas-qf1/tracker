@@ -7,8 +7,8 @@ import com.reas.tracker2.MainActivity
 import com.reas.tracker2.R
 import com.reas.tracker2.android.NotificationBuilder
 import com.reas.tracker2.android.NotificationWrapper
-import com.reas.tracker2.shared.Play
-import com.reas.tracker2.shared.TrackWithAlbum
+import com.reas.tracker2.shared.Scrobble
+import com.reas.tracker2.shared.Track
 import kotlin.uuid.Uuid
 
 class NowPlayingNotificationManagerAndroid(
@@ -16,9 +16,9 @@ class NowPlayingNotificationManagerAndroid(
 ) : NowPlayingNotificationManager {
     private var currentId: Uuid? = null
 
-    override fun show(play: Play) {
-        updateNotification(if (play.lastPlaying) play.metadata else null)
-        currentId = play.id
+    override fun show(scrobble: Scrobble) {
+        updateNotification(if (scrobble.lastPlaying) scrobble.metadata else null)
+        currentId = scrobble.id
     }
 
     override fun showDefault() {
@@ -28,11 +28,11 @@ class NowPlayingNotificationManagerAndroid(
 
     override fun currentId(): Uuid? = currentId
 
-    private fun updateNotification(metadata: TrackWithAlbum?) {
+    private fun updateNotification(track: Track?) {
         val builder: NotificationBuilder = { context ->
-            if (metadata != null) {
-                setContentTitle(metadata.name)
-                setContentText(metadata.artistsAsString)
+            if (track != null) {
+                setContentTitle(track.name)
+                setContentText(track.artistsAsString)
             } else {
                 setContentTitle("Nothing is playing")
             }

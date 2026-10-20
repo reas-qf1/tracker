@@ -56,6 +56,8 @@ data class Artist(
     @Transient val id: Long = -1,
 ) {
     override fun equals(other: Any?): Boolean = other is Artist && name == other.name
+
+    override fun hashCode(): Int = name.hashCode()
 }
 
 @Serializable
@@ -68,55 +70,36 @@ data class Album(
         get() = artists.raw
 
     override fun equals(other: Any?): Boolean = other is Album && name == other.name && artists == other.artists
+
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + artists.hashCode()
+        return result
+    }
 }
 
 @Serializable
 data class Track(
+    private val albumObject: Album?,
     val name: String,
     val artists: ArtistList,
     @Transient val id: Long = -1,
 ) {
-    val artistsAsString: String
-        get() = artists.raw
-
-    fun withAlbum() = TrackWithAlbum(this, null)
-
-    override fun equals(other: Any?): Boolean = other is Track && name == other.name && artists == other.artists
-}
-
-@Serializable
-data class TrackWithAlbum(
-    private val trackObject: Track,
-    private val albumObject: Album?,
-) {
-    constructor(track: String, artists: ArtistList, album: String?, albumArtists: ArtistList?) :
-        this(
-            Track(track, artists),
-            album?.let { Album(album, albumArtists ?: artists) },
-        )
-
     constructor(track: String, artists: String, album: String?, albumArtists: String?) :
         this(
-            Track(track, ArtistList(artists)),
             album?.let { Album(album, ArtistList(albumArtists ?: artists)) },
+            track,
+            ArtistList(artists),
         )
 
-    val id: Long
-        get() = trackObject.id
-    val name: String
-        get() = trackObject.name
-    val artists: ArtistList
-        get() = trackObject.artists
     val albumArtists: ArtistList?
         get() = albumObject?.artists
     val artistsAsString: String
-        get() = trackObject.artists.raw
+        get() = artists.raw
     val albumArtistsAsString: String?
         get() = albumObject?.artists?.raw
     val album: String?
         get() = albumObject?.name
-    val asTrack: Track
-        get() = trackObject
     val hasAlbum: Boolean
         get() = albumObject != null
     val asAlbum: Album?
@@ -124,7 +107,7 @@ data class TrackWithAlbum(
 
     override fun equals(other: Any?): Boolean {
         if (other == null) return false
-        if (other !is TrackWithAlbum) return false
+        if (other !is Track) return false
         if (this === other) return true
 
         if (name != other.name) return false
@@ -163,7 +146,7 @@ data class EventInfo(
 
 @Serializable
 data class Event(
-    val metadata: TrackWithAlbum,
+    val metadata: Track,
     val duration: Duration,
     val info: EventInfo,
     val source: Source,
@@ -199,7 +182,7 @@ data class Event(
 
     companion object {
         fun create(
-            metadata: TrackWithAlbum,
+            track: Track,
             duration: Long,
             timestamp: Long,
             position: Long,
@@ -207,7 +190,7 @@ data class Event(
             speed: Double,
             source: Source,
         ) = Event(
-            metadata = metadata,
+            metadata = track,
             duration = duration.milliseconds,
             info = EventInfo(
                 timestamp = Instant.fromEpochMilliseconds(timestamp),
@@ -234,9 +217,9 @@ data class Source(
 }
 
 @Serializable
-data class Play(
+data class Scrobble(
     val id: Uuid,
-    val metadata: TrackWithAlbum,
+    val metadata: Track,
     val isDeleted: Boolean,
     val duration: Duration,
     val timestamp: Instant,
@@ -309,8 +292,8 @@ data class Play(
 
     companion object {
         @OptIn(ExperimentalUuidApi::class)
-        fun fromEvent(event: Event): Play =
-            Play(
+        fun fromEvent(event: Event): Scrobble =
+            Scrobble(
                 id = Uuid.generateV4(),
                 metadata = event.metadata,
                 isDeleted = false,
@@ -324,11 +307,11 @@ data class Play(
 }
 
 @Serializable
-data class PlayEdit(
+data class ScrobbleEdit(
     val id: Uuid,
-    val playId: Uuid,
+    val scrobbleId: Uuid,
     val timestamp: Instant,
-    val metadata: TrackWithAlbum,
+    val track: Track,
     val reason: EditReason,
 ) {
     @Serializable
@@ -342,22 +325,22 @@ data class PlayEdit(
 
     companion object {
         @OptIn(ExperimentalUuidApi::class)
-        fun new(play: Play) =
-            PlayEdit(
+        fun new(scrobble: Scrobble) =
+            ScrobbleEdit(
                 id = Uuid.generateV4(),
-                playId = play.id,
-                timestamp = play.timestamp,
-                metadata = play.metadata,
+                scrobbleId = scrobble.id,
+                timestamp = scrobble.timestamp,
+                track = scrobble.metadata,
                 reason = EditReason.Initial,
             )
 
         @OptIn(ExperimentalUuidApi::class)
-        fun edit(play: Play, newMetadata: TrackWithAlbum, reason: EditReason) =
-            PlayEdit(
+        fun edit(scrobble: Scrobble, newTrack: Track, reason: EditReason) =
+            ScrobbleEdit(
                 id = Uuid.generateV4(),
-                playId = play.id,
+                scrobbleId = scrobble.id,
                 timestamp = Clock.System.now(),
-                metadata = newMetadata,
+                track = newTrack,
                 reason = reason,
             )
     }

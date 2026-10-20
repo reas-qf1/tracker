@@ -26,14 +26,14 @@ class EventProcessingTest {
         ignoreUnknownKeys = true
     }
 
-    private suspend fun TestScope.setupAndTest(actions: suspend EventProcessor.() -> Unit): List<Play> {
+    private suspend fun TestScope.setupAndTest(actions: suspend EventProcessor.() -> Unit): List<Scrobble> {
         val adapter = TestEventProcessorAdapter()
         val eventProcessor = EventProcessor(adapter)
         val holePlugger = HolePlugger(this, testClock)
         val processJob = launch {
             eventProcessor.processQueue()
         }
-        val plays = mutableMapOf<String,Play>()
+        val plays = mutableMapOf<String, Scrobble>()
         val collectJob = launch {
             eventProcessor.collectPlays { newPlays ->
                 newPlays.forEach { play ->
@@ -63,23 +63,25 @@ class EventProcessingTest {
     private suspend fun EventProcessor.addFromFile(name: String) {
         val file = File("src/commonTest/kotlin/com/reas/tracker2/$name")
         val events = json.decodeFromStream<List<EventRepr>>(file.inputStream())
-        addEvents(events.map { event ->
-            Event.create(
-                track = event.track,
-                artist = event.artist,
-                album = event.album,
-                albumArtist = event.album_artist,
-                timestamp = event.timestamp,
-                duration = event.duration,
-                isPlaying = event.is_playing == 1,
-                position = event.position,
-                source = Source(
-                    user = event.source_user,
-                    client = event.source_device,
-                    app = event.source_app,
+        addEvents(
+            events.map { event ->
+                Event.create(
+                    track = event.track,
+                    artist = event.artist,
+                    album = event.album,
+                    albumArtist = event.album_artist,
+                    timestamp = event.timestamp,
+                    duration = event.duration,
+                    isPlaying = event.is_playing == 1,
+                    position = event.position,
+                    source = Source(
+                        user = event.source_user,
+                        client = event.source_device,
+                        app = event.source_app,
+                    ),
                 )
-            )
-        })
+            },
+        )
         delay(1.milliseconds) // to let all jobs run
     }
 
@@ -94,47 +96,49 @@ class EventProcessingTest {
         duration: Duration = 10.seconds,
         source: Source = testSource,
     ) = Event.create(
-            track = track,
-            artist = artist,
-            album = album,
-            albumArtist = albumArtist,
-            duration = duration.inWholeMilliseconds,
-            timestamp = (testClock.now() + timestamp).toEpochMilliseconds(),
-            position = position.inWholeMilliseconds,
-            isPlaying = isPlaying,
-            source = source
-        )
-
-
-    @Test
-    fun basicTest() = runTest {
-        val plays = setupAndTest {
-            add(
-                Event.createTest(true, 0.seconds, 0.seconds),
-                Event.createTest(false, 1.seconds, 1.seconds)
-            )
-        }
-        assertEquals(1, plays.size)
-        assertEquals(1.seconds, plays[0].timePlayed)
-        assertEquals(testClock.now(), plays[0].timestamp)
-    }
+        track = track,
+        artist = artist,
+        album = album,
+        albumArtist = albumArtist,
+        duration = duration.inWholeMilliseconds,
+        timestamp = (testClock.now() + timestamp).toEpochMilliseconds(),
+        position = position.inWholeMilliseconds,
+        isPlaying = isPlaying,
+        source = source,
+    )
 
     @Test
-    fun basicPlugHoleTest() = runTest {
-        val plays = setupAndTest {
-            add(Event.createTest(true, 0.seconds, 0.seconds))
-            delay(100.seconds)
+    fun basicTest() =
+        runTest {
+            val plays = setupAndTest {
+                add(
+                    Event.createTest(true, 0.seconds, 0.seconds),
+                    Event.createTest(false, 1.seconds, 1.seconds),
+                )
+            }
+            assertEquals(1, plays.size)
+            assertEquals(1.seconds, plays[0].timePlayed)
+            assertEquals(testClock.now(), plays[0].timestamp)
         }
-        assertEquals(1, plays.size)
-        assertEquals(10.seconds, plays[0].timePlayed)
-    }
 
     @Test
-    fun basicFromFileTest() = runTest {
-        val plays = setupAndTest {
-            addFromFile("test.json")
+    fun basicPlugHoleTest() =
+        runTest {
+            val plays = setupAndTest {
+                add(Event.createTest(true, 0.seconds, 0.seconds))
+                delay(100.seconds)
+            }
+            assertEquals(1, plays.size)
+            assertEquals(10.seconds, plays[0].timePlayed)
         }
-        assertEquals(1, plays.size)
-        assertEquals("memories", plays[0].track)
-    }
+
+    @Test
+    fun basicFromFileTest() =
+        runTest {
+            val plays = setupAndTest {
+                addFromFile("test.json")
+            }
+            assertEquals(1, plays.size)
+            assertEquals("memories", plays[0].track)
+        }
 }

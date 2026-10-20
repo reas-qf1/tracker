@@ -11,24 +11,24 @@ class EventProcessor(
         private val logger = KotlinLogging.logger {}
     }
 
-    suspend fun process(snapshot: List<Event>): Pair<List<Play>, List<Play>> {
+    suspend fun process(snapshot: List<Event>): Pair<List<Scrobble>, List<Scrobble>> {
         logger.debug { "processing ${snapshot.size} events" }
-        val newPlays = mutableListOf<Play>()
-        val updatedPlays = mutableListOf<Play>()
+        val newScrobbles = mutableListOf<Scrobble>()
+        val updatedScrobbles = mutableListOf<Scrobble>()
 
         snapshot.groupBy { it.source }.forEach { (source, events) ->
-            processSingleSource(newPlays, updatedPlays, source, events)
+            processSingleSource(newScrobbles, updatedScrobbles, source, events)
         }
-        return newPlays to updatedPlays
+        return newScrobbles to updatedScrobbles
     }
 
     private suspend fun processSingleSource(
-        newPlays: MutableList<Play>,
-        updatedPlays: MutableList<Play>,
+        newScrobbles: MutableList<Scrobble>,
+        updatedScrobbles: MutableList<Scrobble>,
         source: Source,
         events: List<Event>,
     ) {
-        var play = adapter.getLastPlayFromSource(source)
+        var play = adapter.getLastScrobbleFromSource(source)
         var updatingPlay = true
 
         val eventsSorted = events.sortedBy { it.timestamp }
@@ -45,7 +45,7 @@ class EventProcessor(
             if (play == null) {
                 logger.debug { "play == null" }
                 if (event.isPlaying) {
-                    play = Play.fromEvent(event)
+                    play = Scrobble.fromEvent(event)
                     updatingPlay = false
                 }
                 return@forEach
@@ -78,11 +78,11 @@ class EventProcessor(
                     play.plug(event.timestamp, position, play.lastSpeed)
                 }
                 if (updatingPlay) {
-                    updatedPlays.add(play)
+                    updatedScrobbles.add(play)
                 } else {
-                    newPlays.add(play)
+                    newScrobbles.add(play)
                 }
-                play = Play.fromEvent(event)
+                play = Scrobble.fromEvent(event)
                 updatingPlay = false
             } else {
                 play.associatedEvents.add(event.info)
@@ -92,23 +92,23 @@ class EventProcessor(
 
         if (play != null) {
             if (updatingPlay) {
-                updatedPlays.add(play)
+                updatedScrobbles.add(play)
             } else {
-                newPlays.add(play)
+                newScrobbles.add(play)
             }
         }
     }
 
-    private fun isNewPlay(event: Event, lastPlay: Play): Boolean =
+    private fun isNewPlay(event: Event, lastScrobble: Scrobble): Boolean =
         if (event.isPlaying) {
             if (event.position <= SKIP_MIN_DURATION) {
-                event.metadata != lastPlay.metadata ||
-                    lastPlay.lastPosition > SKIP_MIN_DURATION ||
-                    (event.timestamp - lastPlay.lastTimestamp) > SKIP_MIN_DURATION
+                event.metadata != lastScrobble.metadata ||
+                    lastScrobble.lastPosition > SKIP_MIN_DURATION ||
+                    (event.timestamp - lastScrobble.lastTimestamp) > SKIP_MIN_DURATION
             } else {
-                event.metadata != lastPlay.metadata
+                event.metadata != lastScrobble.metadata
             }
         } else {
-            event.position <= SKIP_MIN_DURATION && lastPlay.lastPosition > SKIP_MIN_DURATION
+            event.position <= SKIP_MIN_DURATION && lastScrobble.lastPosition > SKIP_MIN_DURATION
         }
 }

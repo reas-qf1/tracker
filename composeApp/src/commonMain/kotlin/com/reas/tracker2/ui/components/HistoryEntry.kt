@@ -12,7 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.reas.tracker2.buildConfig.IS_DEBUG
-import com.reas.tracker2.shared.Play
+import com.reas.tracker2.shared.Scrobble
 import com.reas.tracker2.ui.state
 import com.reas.tracker2.ui.theme.Typography
 import org.jetbrains.compose.resources.stringResource
@@ -23,7 +23,7 @@ import tracker2.composeapp.generated.resources.wrench
 
 @Composable
 fun HistoryEntry(
-    play: Play,
+    scrobble: Scrobble,
     modifier: Modifier = Modifier,
     imageUrl: suspend () -> Any? = { null },
     onClick: () -> Unit = {},
@@ -31,7 +31,7 @@ fun HistoryEntry(
     onDelete: () -> Unit = {},
 ) {
     val bgColor =
-        if (play.isNowPlaying) {
+        if (scrobble.isNowPlaying) {
             MaterialTheme.colorScheme.surfaceContainerHighest
         } else {
             MaterialTheme.colorScheme.surfaceContainer
@@ -48,7 +48,7 @@ fun HistoryEntry(
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ConstrainedText(
-                    play.track,
+                    scrobble.track,
                     height = 28.dp,
                     baselineHeight = 22.5.dp,
                     style = Typography.titleLarge,
@@ -57,7 +57,7 @@ fun HistoryEntry(
                 )
                 Spacer(Modifier.width(5.dp))
 
-                if (IS_DEBUG && play.associatedEvents.isNotEmpty()) {
+                if (IS_DEBUG && scrobble.associatedEvents.isNotEmpty()) {
                     var debugInfoExpanded by state(false)
                     Box {
                         Icon(
@@ -76,12 +76,12 @@ fun HistoryEntry(
                                 text = {
                                     Text(
                                         """
-                                        Track ID: ${play.metadata.asTrack.id}
-                                        Artist IDs: ${play.metadata.artists.map { it.id }.joinToString()}
-                                        ${if (play.metadata.hasAlbum) {
+                                        Track ID: ${scrobble.metadata.id}
+                                        Artist IDs: ${scrobble.metadata.artists.map { it.id }.joinToString()}
+                                        ${if (scrobble.metadata.hasAlbum) {
                                             """
-                                        Album ID: ${play.metadata.asAlbum?.id}
-                                        Album artist IDs: ${play.metadata.albumArtists?.map { it.id }?.joinToString()}
+                                        Album ID: ${scrobble.metadata.asAlbum?.id}
+                                        Album artist IDs: ${scrobble.metadata.albumArtists?.map { it.id }?.joinToString()}
                                         """.trim()
                                         } else {
                                             ""
@@ -92,14 +92,14 @@ fun HistoryEntry(
                                 onClick = {},
                             )
                             DropdownMenuItem(
-                                text = { Text("Time played: ${play.timePlayed}") },
+                                text = { Text("Time played: ${scrobble.timePlayed}") },
                                 onClick = {},
                             )
                             DropdownMenuItem(
                                 text = { Text("Associated events: ") },
                                 onClick = {},
                             )
-                            play.associatedEvents.forEach { event ->
+                            scrobble.associatedEvents.forEach { event ->
                                 DropdownMenuItem(
                                     text = {
                                         Text(
@@ -168,13 +168,13 @@ fun HistoryEntry(
             Row {
                 Column(modifier = Modifier.weight(1.0F)) {
                     ConstrainedText(
-                        play.artistsAsString,
+                        scrobble.artistsAsString,
                         height = 21.dp,
                         baselineHeight = 17.dp,
                         style = Typography.bodyLarge,
                         color = MaterialTheme.colorScheme.secondary,
                     )
-                    play.asAlbum?.let {
+                    scrobble.asAlbum?.let {
                         Spacer(Modifier.height(1.dp))
                         ConstrainedText(
                             it.name,
@@ -192,7 +192,7 @@ fun HistoryEntry(
                         .padding(bottom = 3.dp),
                     verticalArrangement = Arrangement.Bottom,
                 ) {
-                    if (play.isNowPlaying) {
+                    if (scrobble.isNowPlaying) {
                         Icon(
                             Icons.Filled.PlayArrow,
                             stringResource(Res.string.now_playing),
@@ -200,7 +200,7 @@ fun HistoryEntry(
                         )
                     } else {
                         Timestamp(
-                            play.timestamp,
+                            scrobble.timestamp,
                             style = Typography.bodySmall,
                             color = MaterialTheme.colorScheme.secondary,
                         )

@@ -12,8 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.reas.tracker2.shared.ArtistList
-import com.reas.tracker2.shared.TrackWithAlbum
+import com.reas.tracker2.shared.Track
 import com.reas.tracker2.ui.components.ConfirmRow
 import com.reas.tracker2.ui.derivedState
 import com.reas.tracker2.ui.navigation.ApplicationState
@@ -59,7 +58,7 @@ fun EditBottomSheet(
     modifier: Modifier = Modifier,
     viewModel: EditBottomSheetViewModel = koinViewModel(),
 ) {
-    val scrobble = arguments.play
+    val scrobble = arguments.scrobble
     var track by state(scrobble.track)
     var artists by state(scrobble.artistsAsString)
     var album by state(scrobble.album ?: "")
@@ -107,13 +106,13 @@ fun EditBottomSheet(
             enabled = canSave,
             modifier = Modifier.padding(12.dp),
             onConfirm = {
-                val track = TrackWithAlbum(
+                val newTrack = Track(
                     track = track,
-                    artists = ArtistList(artists),
+                    artists = artists,
                     album = album.ifEmpty { null },
-                    albumArtists = if (album.isEmpty()) null else ArtistList(albumArtists.ifEmpty { artists }),
+                    albumArtists = if (album.isEmpty()) null else albumArtists.ifEmpty { artists },
                 )
-                viewModel.edit(scrobble, track)
+                viewModel.edit(scrobble, newTrack)
             },
             onDismiss = { applicationState.goBack() },
         )

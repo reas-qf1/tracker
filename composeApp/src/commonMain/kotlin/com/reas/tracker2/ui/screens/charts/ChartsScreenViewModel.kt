@@ -8,12 +8,11 @@ import com.reas.tracker2.settings.chartSort
 import com.reas.tracker2.shared.Album
 import com.reas.tracker2.shared.Artist
 import com.reas.tracker2.shared.TimePeriod
-import com.reas.tracker2.shared.TrackWithAlbum
+import com.reas.tracker2.shared.Track
 import com.reas.tracker2.ui.TrackerViewModel
 import com.reas.tracker2.ui.components.ChartEntryUiState
 import com.reas.tracker2.ui.navigation.ChartSort
 import com.reas.tracker2.ui.navigation.ChartType
-import com.reas.tracker2.ui.navigation.Charts
 import com.reas.tracker2.ui.navigation.InfoBottomSheet
 import com.reas.tracker2.util.toDisplayString
 import kotlinx.coroutines.flow.Flow
@@ -114,8 +113,7 @@ class ChartsScreenViewModel(
             )
         }
 
-    fun getInfo(arguments: Charts, sort: ChartSort): Flow<PagingData<ChartEntryUiState>> {
-        val type = arguments.type
+    fun getInfo(type: ChartType, sort: ChartSort): Flow<PagingData<ChartEntryUiState>> {
         val period = TimePeriod.ALLTIME
 
         return when {
@@ -153,7 +151,7 @@ class ChartsScreenViewModel(
 
     suspend fun getAlbumImageUrl(album: Album): String? = networkRepository.getAlbumImageUrl(album, "large")
 
-    suspend fun getTrackImageUrl(track: TrackWithAlbum): String? = track.asAlbum?.let { getAlbumImageUrl(it) }
+    suspend fun getTrackImageUrl(track: Track): String? = track.asAlbum?.let { getAlbumImageUrl(it) }
 
     fun sort() = settings.stateFlow(chartSort)
 

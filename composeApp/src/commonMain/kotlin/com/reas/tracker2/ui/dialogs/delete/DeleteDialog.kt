@@ -20,7 +20,7 @@ fun DeleteDialog(
     modifier: Modifier = Modifier,
     viewModel: DeleteDialogViewModel = koinViewModel(),
 ) {
-    val scrobble = screen.play
+    val scrobble = screen.scrobble
     ConfirmDialog(
         onConfirm = { viewModel.delete(scrobble) },
         onDismiss = { applicationState.goBack() },

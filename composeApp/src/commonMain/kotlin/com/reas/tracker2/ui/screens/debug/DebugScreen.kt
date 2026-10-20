@@ -44,7 +44,7 @@ fun DebugScreen(
     }
 
     Column(modifier = modifier) {
-        Text("Total plays: $playCount")
+        Text("Total scrobbles: $playCount")
         Text("Total edits: $editCount")
         Text("Event log:")
         Button(onClick = { throw RuntimeException("Error message") }) {

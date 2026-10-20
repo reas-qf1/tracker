@@ -40,12 +40,12 @@ fun TrackInfoScreen(
     val scope = rememberCoroutineScope()
     val period = TimePeriod.ALLTIME
 
-    val plays by rememberAsState { viewModel.plays(track, period) }
+    val playCount by rememberAsState { viewModel.playCount(track, period) }
     val timePlayed by rememberAsState { viewModel.timePlayed(track, period) }
-    val playsAsString = if (plays == -1) "..." else plays.toString()
+    val playCountAsString = if (playCount == -1) "..." else playCount.toString()
     val timePlayedAsString = timePlayed.toDisplayString()
-    val timeRank by rememberAsState { viewModel.rank(track, period) }
-    val playRank by rememberAsState { viewModel.playRank(track, period) }
+    val rank by rememberAsState { viewModel.rank(track, period) }
+    val rankByPlayCount by rememberAsState { viewModel.rankByPlayCount(track, period) }
 
     Column(
         modifier = modifier.padding(top = 5.dp, start = 5.dp, end = 5.dp),
@@ -88,7 +88,7 @@ fun TrackInfoScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 InfoBox {
-                    AutosizingText(playsAsString, style = MaterialTheme.typography.headlineSmall)
+                    AutosizingText(playCountAsString, style = MaterialTheme.typography.headlineSmall)
                     Text(stringResource(Res.string.plays).lowercase(), color = MaterialTheme.colorScheme.secondary)
                 }
                 InfoBox {
@@ -100,14 +100,14 @@ fun TrackInfoScreen(
                 }
                 InfoBox {
                     if (sort.byTime) {
-                        AutosizingText(timeRank, style = MaterialTheme.typography.headlineSmall)
+                        AutosizingText(rank, style = MaterialTheme.typography.headlineSmall)
                         Text(
                             stringResource(Res.string.in_charts_by_time),
                             color = MaterialTheme.colorScheme.secondary,
                             textAlign = TextAlign.Center,
                         )
                     } else {
-                        AutosizingText(playRank, style = MaterialTheme.typography.headlineSmall)
+                        AutosizingText(rankByPlayCount, style = MaterialTheme.typography.headlineSmall)
                         Text(
                             stringResource(Res.string.in_charts_by_plays),
                             color = MaterialTheme.colorScheme.secondary,

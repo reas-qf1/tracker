@@ -9,14 +9,14 @@ import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 @Entity(
-    tableName = "plays",
+    tableName = "scrobbles",
     indices = [
         Index("trackId", unique = false),
         Index("timestamp", orders = [Index.Order.DESC], unique = false),
         Index("sourceDevice", "sourceApp", "timestamp", unique = true),
     ],
 )
-data class PlayEntity(
+data class ScrobbleEntity(
     @PrimaryKey val id: Uuid,
     val trackId: Long,
     val isDeleted: Boolean,

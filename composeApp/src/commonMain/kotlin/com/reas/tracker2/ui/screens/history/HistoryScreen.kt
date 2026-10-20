@@ -50,19 +50,19 @@ fun HistoryScreen(
         PagedLazyColumn(scrollState, history, key = { scrobble -> scrobble.key() }) { _, entry ->
             when (entry) {
                 is HistoryEntry.Play -> {
-                    val scrobble = entry.play
+                    val scrobble = entry.scrobble
                     HistoryEntry(
-                        play = scrobble,
+                        scrobble = scrobble,
                         modifier = Modifier.padding(5.dp).height(84.dp).animateItem(),
                         imageUrl = { viewModel.getImageUrl(scrobble) },
                         onClick = {
                             applicationState.navigate(InfoBottomSheet(track = scrobble.metadata))
                         },
                         onDelete = {
-                            applicationState.navigate(Delete(play = scrobble))
+                            applicationState.navigate(Delete(scrobble = scrobble))
                         },
                         onEdit = {
-                            applicationState.navigate(EditBottomSheet(play = scrobble))
+                            applicationState.navigate(EditBottomSheet(scrobble = scrobble))
                         },
                     )
                 }

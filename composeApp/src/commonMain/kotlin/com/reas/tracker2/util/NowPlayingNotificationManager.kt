@@ -1,23 +1,23 @@
 package com.reas.tracker2.util
 
-import com.reas.tracker2.shared.Play
+import com.reas.tracker2.shared.Scrobble
 import kotlin.uuid.Uuid
 
 interface NowPlayingNotificationManager {
-    fun show(play: Play)
+    fun show(scrobble: Scrobble)
 
     fun showDefault()
 
     fun currentId(): Uuid?
 
-    fun edit(play: Play) {
-        if (currentId() == play.id) {
-            show(play)
+    fun edit(scrobble: Scrobble) {
+        if (currentId() == scrobble.id) {
+            show(scrobble)
         }
     }
 
-    fun delete(play: Play) {
-        if (currentId() == play.id) {
+    fun delete(scrobble: Scrobble) {
+        if (currentId() == scrobble.id) {
             showDefault()
         }
     }

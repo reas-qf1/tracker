@@ -30,8 +30,8 @@ fun ChartsScreen(
     val scope = rememberCoroutineScope()
     val scrollState = viewModel.scrollState
 
-    val infoTime = rememberAsPagingItems { viewModel.getInfo(screen, ChartSort.TIME) }
-    val infoPlays = rememberAsPagingItems { viewModel.getInfo(screen, ChartSort.PLAYS) }
+    val charts = rememberAsPagingItems { viewModel.getInfo(screen.type, ChartSort.TIME) }
+    val chartsByPlayCount = rememberAsPagingItems { viewModel.getInfo(screen.type, ChartSort.PLAYS) }
 
     ScrollToTopButton(screen.screenState, scrollState)
     Column(modifier = modifier.padding(horizontal = 5.dp)) {
@@ -44,8 +44,8 @@ fun ChartsScreen(
         LazyDoubleChartColumn(
             scrollState,
             sort.byTime,
-            infoTime,
-            infoPlays,
+            charts,
+            chartsByPlayCount,
             onClick = { entry -> applicationState.navigate(entry.infoBottomSheet) },
         )
     }

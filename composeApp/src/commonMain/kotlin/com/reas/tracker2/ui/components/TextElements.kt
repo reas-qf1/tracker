@@ -18,14 +18,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import com.reas.tracker2.ui.derivedState
 import com.reas.tracker2.ui.state
+import com.reas.tracker2.util.printLong
+import com.reas.tracker2.util.printShort
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.format
-import kotlinx.datetime.format.DateTimeComponents
-import kotlinx.datetime.format.MonthNames
-import kotlinx.datetime.format.char
-import kotlinx.datetime.offsetAt
 import org.jetbrains.compose.resources.stringResource
 import tracker2.composeapp.generated.resources.*
 import kotlin.time.Clock
@@ -171,35 +167,3 @@ fun Timestamp(
         }
     }
 }
-
-fun Instant.printShort() =
-    this.format(
-        DateTimeComponents.Format {
-            monthName(MonthNames.ENGLISH_ABBREVIATED)
-            char(' ')
-            day()
-            char(',')
-            char(' ')
-            year()
-        },
-        offset = TimeZone.currentSystemDefault().offsetAt(this),
-    )
-
-fun Instant.printLong() =
-    this.format(
-        DateTimeComponents.Format {
-            monthName(MonthNames.ENGLISH_FULL)
-            char(' ')
-            day()
-            char(',')
-            char(' ')
-            year()
-            char(' ')
-            hour()
-            char(':')
-            minute()
-            char(':')
-            second()
-        },
-        offset = TimeZone.currentSystemDefault().offsetAt(this),
-    )

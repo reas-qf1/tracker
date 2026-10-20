@@ -42,17 +42,15 @@ data class TrackWithData(
     val album: AlbumWithData?,
 ) {
     fun toTrack() =
-        TrackWithAlbum(
-            trackObject = Track(
-                id = track.trackId,
-                name = track.name,
-                artists = ArtistList(artists.map { Artist(it.name, it.artistId) }, track.artists),
-            ),
+        Track(
+            id = track.trackId,
+            name = track.name,
+            artists = ArtistList(artists.map { Artist(it.name, it.artistId) }, track.artists),
             albumObject = album?.toAlbum(),
         )
 }
 
-data class PlayWithData(
+data class ScrobbleWithData(
     val id: Uuid,
     @Embedded val metadata: TrackWithData,
     val isDeleted: Boolean,
@@ -80,7 +78,7 @@ data class TrackWithPlayCount(
     @Embedded val _track: TrackWithData,
     val playCount: Int,
 ) {
-    val track: TrackWithAlbum
+    val track: Track
         get() = _track.toTrack()
 }
 
@@ -88,7 +86,7 @@ data class TrackWithTimePlayed(
     @Embedded val _track: TrackWithData,
     val timePlayed: Duration,
 ) {
-    val track: TrackWithAlbum
+    val track: Track
         get() = _track.toTrack()
 }
 

@@ -13,14 +13,14 @@ fun TrackerBackgroundProcesses(onError: suspend (String) -> Unit) {
 
     // plugging holes
     LaunchedEffect(Unit) {
-        repository.getNowPlayingTracks().collect { plays ->
+        repository.getNowPlaying().collect { plays ->
             holePlugger.cancelAll()
             holePlugger.register(plays)
         }
     }
     LaunchedEffect(Unit) {
         holePlugger.collectPlays { play ->
-            repository.insertPlay(play)
+            repository.insertScrobble(play)
         }
     }
 }

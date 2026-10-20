@@ -2,7 +2,7 @@ package com.reas.tracker2.database
 
 import androidx.room3.*
 import com.reas.tracker2.database.daos.EditsDao
-import com.reas.tracker2.database.daos.PlayDao
+import com.reas.tracker2.database.daos.ScrobbleDao
 import com.reas.tracker2.database.daos.TrackDao
 import com.reas.tracker2.database.entities.*
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +14,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 
 @Database(
     entities = [
-        PlayEntity::class,
+        ScrobbleEntity::class,
         TrackEntity::class,
         AlbumEntity::class,
         ArtistEntity::class,
@@ -28,7 +28,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 @ColumnTypeConverters(Converters::class)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun playDao(): PlayDao
+    abstract fun scrobbleDao(): ScrobbleDao
 
     abstract fun trackDao(): TrackDao
 

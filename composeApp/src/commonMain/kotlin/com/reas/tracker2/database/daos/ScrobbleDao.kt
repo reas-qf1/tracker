@@ -5,7 +5,7 @@ import androidx.room3.*
 import androidx.room3.OnConflictStrategy.Companion.REPLACE
 import androidx.room3.paging.PagingSourceDaoReturnTypeConverter
 import com.reas.tracker2.database.*
-import com.reas.tracker2.database.entities.PlayEntity
+import com.reas.tracker2.database.entities.ScrobbleEntity
 import com.reas.tracker2.shared.EventInfo
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
@@ -18,30 +18,30 @@ private const val isNotSkip = "timePlayed >= 2 * 1000 AND NOT isDeleted"
 
 @Dao
 @DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)
-interface PlayDao {
+interface ScrobbleDao {
     @Insert(onConflict = REPLACE)
-    suspend fun insert(play: PlayEntity): Long
+    suspend fun insert(play: ScrobbleEntity): Long
 
     @Insert(onConflict = REPLACE)
-    suspend fun insertBatch(plays: List<PlayEntity>)
+    suspend fun insertBatch(plays: List<ScrobbleEntity>)
 
     @Update
-    suspend fun update(play: PlayEntity)
+    suspend fun update(play: ScrobbleEntity)
 
     @Delete
-    suspend fun delete(play: PlayEntity)
+    suspend fun delete(play: ScrobbleEntity)
 
-    @Query("SELECT * FROM plays WHERE id = :id")
-    suspend fun getPlay(id: Uuid): PlayEntity?
+    @Query("SELECT * FROM scrobbles WHERE id = :id")
+    suspend fun getScrobble(id: Uuid): ScrobbleEntity?
 
-    @Query("SELECT * FROM plays WHERE sourceDevice = :device AND sourceApp = :app ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLastPlayFromSource(device: String?, app: String?): PlayEntity?
+    @Query("SELECT * FROM scrobbles WHERE sourceDevice = :device AND sourceApp = :app ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLastScrobbleFromSource(device: String?, app: String?): ScrobbleEntity?
 
-    @Query("UPDATE plays SET isDeleted = 1 WHERE id = :id")
-    suspend fun markPlayDeleted(id: Uuid)
+    @Query("UPDATE scrobbles SET isDeleted = 1 WHERE id = :id")
+    suspend fun markScrobbleDeleted(id: Uuid)
 
-    @Query("SELECT * FROM plays WHERE lastPlaying = 1 AND isDeleted = 0")
-    fun getNowPlayingTracks(): Flow<List<PlayEntity>>
+    @Query("SELECT * FROM scrobbles WHERE lastPlaying = 1 AND isDeleted = 0")
+    fun getNowPlaying(): Flow<List<ScrobbleEntity>>
 
     @Transaction
     @RewriteQueriesToDropUnusedColumns
@@ -49,29 +49,29 @@ interface PlayDao {
         """
         WITH t0 as (
             SELECT * FROM
-                (SELECT *, 1 as sort1, 0 as sort2 FROM plays WHERE lastPlaying = 1 AND isDeleted = 0)
+                (SELECT *, 1 as sort1, 0 as sort2 FROM scrobbles WHERE lastPlaying = 1 AND isDeleted = 0)
             UNION ALL SELECT * FROM
-                (SELECT *, 2 as sort1, timestamp as sort2 FROM plays WHERE $isFullPlay AND lastPlaying = 0)
+                (SELECT *, 2 as sort1, timestamp as sort2 FROM scrobbles WHERE $isFullPlay AND lastPlaying = 0)
         ) SELECT t0.*, tracks.* FROM t0
         JOIN tracks ON t0.trackId = tracks.trackId
         ORDER BY sort1, sort2 DESC
     """,
     )
-    fun getRecentPlays(): PagingSource<Int, PlayWithData>
+    fun getRecentScrobbles(): PagingSource<Int, ScrobbleWithData>
 
     @Query(
         """
-        SELECT COUNT(*) FROM plays
-        JOIN track_artists ON plays.trackId = track_artists.trackId
+        SELECT COUNT(*) FROM scrobbles
+        JOIN track_artists ON scrobbles.trackId = track_artists.trackId
         WHERE track_artists.artistId = :artistId AND $inTimeRange AND $isFullPlay
     """,
     )
-    fun getArtistPlays(artistId: Long, start: Instant, end: Instant): Flow<Int>
+    fun getArtistPlayCount(artistId: Long, start: Instant, end: Instant): Flow<Int>
 
     @Query(
         """
-        SELECT SUM(timePlayed) FROM plays
-        JOIN track_artists ON plays.trackId = track_artists.trackId
+        SELECT SUM(timePlayed) FROM scrobbles
+        JOIN track_artists ON scrobbles.trackId = track_artists.trackId
         WHERE track_artists.artistId = :artistId AND $inTimeRange AND $isNotSkip
     """,
     )
@@ -79,8 +79,8 @@ interface PlayDao {
 
     @Query(
         """
-        SELECT artists.artistId as id, artists.name as name, SUM(timePlayed) as timePlayed FROM plays
-        JOIN track_artists ON plays.trackId = track_artists.trackId
+        SELECT artists.artistId as id, artists.name as name, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN track_artists ON scrobbles.trackId = track_artists.trackId
         JOIN artists ON track_artists.artistId = artists.artistId
         WHERE $inTimeRange AND $isNotSkip
         GROUP BY name ORDER BY timePlayed DESC
@@ -90,8 +90,8 @@ interface PlayDao {
 
     @Query(
         """
-        SELECT artists.artistId as id, artists.name as name, SUM(timePlayed) as timePlayed FROM plays
-        JOIN track_artists ON plays.trackId = track_artists.trackId
+        SELECT artists.artistId as id, artists.name as name, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN track_artists ON scrobbles.trackId = track_artists.trackId
         JOIN artists ON track_artists.artistId = artists.artistId
         WHERE $inTimeRange AND $isNotSkip
         GROUP BY name ORDER BY timePlayed DESC LIMIT :limit
@@ -101,8 +101,8 @@ interface PlayDao {
 
     @Query(
         """
-        SELECT artists.artistId as id, artists.name as name, COUNT(*) as playCount FROM plays
-        JOIN track_artists ON plays.trackId = track_artists.trackId
+        SELECT artists.artistId as id, artists.name as name, COUNT(*) as playCount FROM scrobbles
+        JOIN track_artists ON scrobbles.trackId = track_artists.trackId
         JOIN artists ON track_artists.artistId = artists.artistId
         WHERE $inTimeRange AND $isFullPlay
         GROUP BY name ORDER BY playCount DESC
@@ -113,8 +113,8 @@ interface PlayDao {
     @Query(
         """
         WITH t0 AS (
-            SELECT track_artists.artistId as artistId, SUM(timePlayed) as metric FROM plays
-            JOIN track_artists ON plays.trackId = track_artists.trackId
+            SELECT track_artists.artistId as artistId, SUM(timePlayed) as metric FROM scrobbles
+            JOIN track_artists ON scrobbles.trackId = track_artists.trackId
             WHERE $inTimeRange AND $isNotSkip GROUP BY artistId
         ) SELECT COUNT(*) FROM t0 WHERE metric > (SELECT metric FROM t0 WHERE artistId = :artistId)
     """,
@@ -124,35 +124,35 @@ interface PlayDao {
     @Query(
         """
         WITH t0 AS (
-            SELECT track_artists.artistId as artistId, COUNT(*) as metric FROM plays
-            JOIN track_artists ON plays.trackId = track_artists.trackId
+            SELECT track_artists.artistId as artistId, COUNT(*) as metric FROM scrobbles
+            JOIN track_artists ON scrobbles.trackId = track_artists.trackId
             WHERE $inTimeRange AND $isFullPlay GROUP BY artistId
         ) SELECT COUNT(*) FROM t0 WHERE metric > (SELECT metric FROM t0 WHERE artistId = :artistId)
     """,
     )
     fun getArtistRankByPlayCount(artistId: Long, start: Instant, end: Instant): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM plays WHERE trackId = :trackId AND $inTimeRange AND $isFullPlay")
-    fun getTrackPlays(trackId: Long, start: Instant, end: Instant): Flow<Int>
+    @Query("SELECT COUNT(*) FROM scrobbles WHERE trackId = :trackId AND $inTimeRange AND $isFullPlay")
+    fun getTrackPlayCount(trackId: Long, start: Instant, end: Instant): Flow<Int>
 
-    @Query("SELECT SUM(timePlayed) FROM plays WHERE trackId = :trackId AND $inTimeRange AND $isNotSkip")
+    @Query("SELECT SUM(timePlayed) FROM scrobbles WHERE trackId = :trackId AND $inTimeRange AND $isNotSkip")
     fun getTrackTimePlayed(trackId: Long, start: Instant, end: Instant): Flow<Duration>
 
     @Transaction
     @Query(
         """
-        SELECT plays.*, tracks.* FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
-        WHERE plays.trackId = :trackId AND $isFullPlay ORDER BY timestamp DESC
+        SELECT scrobbles.*, tracks.* FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
+        WHERE scrobbles.trackId = :trackId AND $isFullPlay ORDER BY timestamp DESC
     """,
     )
-    fun getTrackHistory(trackId: Long): PagingSource<Int, PlayWithData>
+    fun getTrackHistory(trackId: Long): PagingSource<Int, ScrobbleWithData>
 
     @Transaction
     @Query(
         """
-        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON tracks.trackId = plays.trackId
+        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON tracks.trackId = scrobbles.trackId
         WHERE $inTimeRange AND $isNotSkip
         GROUP BY tracks.trackId ORDER BY timePlayed DESC
     """,
@@ -162,8 +162,8 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON tracks.trackId = plays.trackId
+        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON tracks.trackId = scrobbles.trackId
         WHERE $inTimeRange AND $isNotSkip
         GROUP BY tracks.trackId ORDER BY timePlayed DESC LIMIT :limit
     """,
@@ -173,8 +173,8 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, COUNT(*) as playCount FROM plays
-        JOIN tracks ON tracks.trackId = plays.trackId
+        SELECT tracks.*, COUNT(*) as playCount FROM scrobbles
+        JOIN tracks ON tracks.trackId = scrobbles.trackId
         WHERE $inTimeRange AND $isFullPlay
         GROUP BY tracks.trackId ORDER BY playCount DESC
     """,
@@ -184,11 +184,11 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON tracks.trackId = plays.trackId
-        JOIN track_artists ON plays.trackId = track_artists.trackId
+        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON tracks.trackId = scrobbles.trackId
+        JOIN track_artists ON scrobbles.trackId = track_artists.trackId
         WHERE $inTimeRange AND $isNotSkip AND track_artists.artistId = :artistId
-        GROUP BY plays.trackId ORDER BY timePlayed DESC
+        GROUP BY scrobbles.trackId ORDER BY timePlayed DESC
     """,
     )
     fun getMostPlayedTracksFromArtist(artistId: Long, start: Instant, end: Instant): PagingSource<Int, TrackWithTimePlayed>
@@ -196,11 +196,11 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON tracks.trackId = plays.trackId
-        JOIN track_artists ON plays.trackId = track_artists.trackId
+        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON tracks.trackId = scrobbles.trackId
+        JOIN track_artists ON scrobbles.trackId = track_artists.trackId
         WHERE $inTimeRange AND $isNotSkip AND track_artists.artistId = :artistId
-        GROUP BY plays.trackId ORDER BY timePlayed DESC LIMIT :limit
+        GROUP BY scrobbles.trackId ORDER BY timePlayed DESC LIMIT :limit
     """,
     )
     fun getMostPlayedTracksFromArtist(
@@ -213,11 +213,11 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, COUNT(*) as playCount FROM plays
-        JOIN tracks ON tracks.trackId = plays.trackId
-        JOIN track_artists ON plays.trackId = track_artists.trackId
+        SELECT tracks.*, COUNT(*) as playCount FROM scrobbles
+        JOIN tracks ON tracks.trackId = scrobbles.trackId
+        JOIN track_artists ON scrobbles.trackId = track_artists.trackId
         WHERE $inTimeRange AND $isFullPlay AND track_artists.artistId = :artistId
-        GROUP BY plays.trackId ORDER BY playCount DESC
+        GROUP BY scrobbles.trackId ORDER BY playCount DESC
     """,
     )
     fun getMostPlayedTracksFromArtistByPlayCount(artistId: Long, start: Instant, end: Instant): PagingSource<Int, TrackWithPlayCount>
@@ -225,11 +225,11 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, COUNT(*) as playCount FROM plays
-        JOIN tracks ON tracks.trackId = plays.trackId
-        JOIN track_artists ON plays.trackId = track_artists.trackId
+        SELECT tracks.*, COUNT(*) as playCount FROM scrobbles
+        JOIN tracks ON tracks.trackId = scrobbles.trackId
+        JOIN track_artists ON scrobbles.trackId = track_artists.trackId
         WHERE $inTimeRange AND $isFullPlay AND track_artists.artistId = :artistId
-        GROUP BY plays.trackId ORDER BY playCount DESC LIMIT :limit
+        GROUP BY scrobbles.trackId ORDER BY playCount DESC LIMIT :limit
     """,
     )
     fun getMostPlayedTracksFromArtistByPlayCount(
@@ -242,10 +242,10 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         WHERE $inTimeRange AND $isNotSkip AND tracks.albumId = :albumId
-        GROUP BY plays.trackId ORDER BY timePlayed DESC
+        GROUP BY scrobbles.trackId ORDER BY timePlayed DESC
     """,
     )
     fun getMostPlayedTracksFromAlbum(albumId: Long, start: Instant, end: Instant): PagingSource<Int, TrackWithTimePlayed>
@@ -253,10 +253,10 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT tracks.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         WHERE $inTimeRange AND $isNotSkip AND tracks.albumId = :albumId
-        GROUP BY plays.trackId ORDER BY timePlayed DESC LIMIT :limit
+        GROUP BY scrobbles.trackId ORDER BY timePlayed DESC LIMIT :limit
     """,
     )
     fun getMostPlayedTracksFromAlbum(
@@ -269,10 +269,10 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, COUNT(*) as playCount FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT tracks.*, COUNT(*) as playCount FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         WHERE $inTimeRange AND $isFullPlay AND tracks.albumId = :albumId
-        GROUP BY plays.trackId ORDER BY playCount DESC
+        GROUP BY scrobbles.trackId ORDER BY playCount DESC
     """,
     )
     fun getMostPlayedTracksFromAlbumByPlayCount(albumId: Long, start: Instant, end: Instant): PagingSource<Int, TrackWithPlayCount>
@@ -280,10 +280,10 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT tracks.*, COUNT(*) as playCount FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT tracks.*, COUNT(*) as playCount FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         WHERE $inTimeRange AND $isFullPlay AND tracks.albumId = :albumId
-        GROUP BY plays.trackId ORDER BY playCount DESC LIMIT :limit
+        GROUP BY scrobbles.trackId ORDER BY playCount DESC LIMIT :limit
     """,
     )
     fun getMostPlayedTracksFromAlbumByPlayCount(
@@ -296,7 +296,7 @@ interface PlayDao {
     @Query(
         """
         WITH t0 AS (
-            SELECT trackId, SUM(timePlayed) as metric FROM plays
+            SELECT trackId, SUM(timePlayed) as metric FROM scrobbles
             WHERE $inTimeRange AND $isNotSkip GROUP BY trackId
         ) SELECT COUNT(*) FROM t0 WHERE metric > (SELECT metric FROM t0 WHERE trackId = :trackId)
     """,
@@ -306,7 +306,7 @@ interface PlayDao {
     @Query(
         """
         WITH t0 AS (
-            SELECT trackId, COUNT(*) as metric FROM plays
+            SELECT trackId, COUNT(*) as metric FROM scrobbles
             WHERE $inTimeRange AND $isFullPlay GROUP BY trackId
         ) SELECT COUNT(*) FROM t0 WHERE metric > (SELECT metric FROM t0 WHERE trackId = :trackId)
     """,
@@ -315,17 +315,17 @@ interface PlayDao {
 
     @Query(
         """
-        SELECT COUNT(*) FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT COUNT(*) FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         WHERE tracks.albumId = :albumId AND $inTimeRange AND $isFullPlay
     """,
     )
-    fun getAlbumPlays(albumId: Long, start: Instant, end: Instant): Flow<Int>
+    fun getAlbumPlayCount(albumId: Long, start: Instant, end: Instant): Flow<Int>
 
     @Query(
         """
-        SELECT SUM(timePlayed) FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT SUM(timePlayed) FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         WHERE tracks.albumId = :albumId AND $inTimeRange AND $isNotSkip
     """,
     )
@@ -334,8 +334,8 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT albums.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT albums.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         JOIN albums ON tracks.albumId = albums.albumId
         WHERE $inTimeRange AND $isNotSkip
         GROUP BY albums.albumId ORDER BY timePlayed DESC
@@ -346,8 +346,8 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT albums.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT albums.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         JOIN albums ON tracks.albumId = albums.albumId
         WHERE $inTimeRange AND $isNotSkip
         GROUP BY albums.albumId ORDER BY timePlayed DESC LIMIT :limit
@@ -358,8 +358,8 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT albums.*, COUNT(*) as playCount FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT albums.*, COUNT(*) as playCount FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         JOIN albums ON tracks.albumId = albums.albumId
         WHERE $inTimeRange AND $isFullPlay
         GROUP BY albums.albumId ORDER BY playCount DESC
@@ -370,8 +370,8 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT albums.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT albums.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         JOIN albums ON tracks.albumId = albums.albumId
         JOIN album_artists ON albums.albumId = album_artists.albumId
         WHERE $inTimeRange AND $isNotSkip AND album_artists.artistId = :artistId
@@ -383,8 +383,8 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT albums.*, SUM(timePlayed) as timePlayed FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT albums.*, SUM(timePlayed) as timePlayed FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         JOIN albums ON tracks.albumId = albums.albumId
         JOIN album_artists ON albums.albumId = album_artists.albumId
         WHERE $inTimeRange AND $isNotSkip AND album_artists.artistId = :artistId
@@ -401,8 +401,8 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT albums.*, COUNT(*) as playCount FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT albums.*, COUNT(*) as playCount FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         JOIN albums ON tracks.albumId = albums.albumId
         JOIN album_artists ON albums.albumId = album_artists.albumId
         WHERE $inTimeRange AND $isFullPlay AND album_artists.artistId = :artistId
@@ -414,8 +414,8 @@ interface PlayDao {
     @Transaction
     @Query(
         """
-        SELECT albums.*, COUNT(*) as playCount FROM plays
-        JOIN tracks ON plays.trackId = tracks.trackId
+        SELECT albums.*, COUNT(*) as playCount FROM scrobbles
+        JOIN tracks ON scrobbles.trackId = tracks.trackId
         JOIN albums ON tracks.albumId = albums.albumId
         JOIN album_artists ON albums.albumId = album_artists.albumId
         WHERE $inTimeRange AND $isFullPlay AND album_artists.artistId = :artistId
@@ -432,8 +432,8 @@ interface PlayDao {
     @Query(
         """
         WITH t0 AS (
-            SELECT tracks.albumId as id, SUM(timePlayed) as metric FROM plays
-            JOIN tracks ON plays.trackId = tracks.trackId
+            SELECT tracks.albumId as id, SUM(timePlayed) as metric FROM scrobbles
+            JOIN tracks ON scrobbles.trackId = tracks.trackId
             WHERE $inTimeRange AND $isNotSkip GROUP BY id
         ) SELECT COUNT(*) FROM t0 WHERE metric > (SELECT metric FROM t0 WHERE id = :albumId)
     """,
@@ -443,20 +443,20 @@ interface PlayDao {
     @Query(
         """
         WITH t0 AS (
-            SELECT tracks.albumId as id, COUNT(*) as metric FROM plays
-            JOIN tracks ON plays.trackId = tracks.trackId
+            SELECT tracks.albumId as id, COUNT(*) as metric FROM scrobbles
+            JOIN tracks ON scrobbles.trackId = tracks.trackId
             WHERE $inTimeRange AND $isFullPlay GROUP BY id
         ) SELECT COUNT(*) FROM t0 WHERE metric > (SELECT metric FROM t0 WHERE id = :albumId)
     """,
     )
     fun getAlbumRankByPlayCount(albumId: Long, start: Instant, end: Instant): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM plays")
+    @Query("SELECT COUNT(*) FROM scrobbles")
     fun getPlayCount(): Flow<Int>
 
     @Query(
         """
-        UPDATE plays SET 
+        UPDATE scrobbles SET 
             timePlayed = :timePlayed, lastPosition = :lastPosition, 
             lastPlaying = :lastPlaying, associatedEvents = :associatedEvents 
         WHERE id = :id
@@ -471,7 +471,7 @@ interface PlayDao {
     )
 
     @Transaction
-    suspend fun updateAssociatedEvents(plays: List<PlayEntity>) {
+    suspend fun updateAssociatedEvents(plays: List<ScrobbleEntity>) {
         for (play in plays) {
             updateAssociatedEvents(play.id, play.timePlayed, play.lastPosition, play.lastPlaying, play.associatedEvents)
         }

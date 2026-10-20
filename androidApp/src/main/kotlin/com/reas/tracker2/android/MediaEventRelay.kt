@@ -77,13 +77,13 @@ class MediaEventRelay(
         }
 
         val isPlaying = state.state == PlaybackState.STATE_PLAYING
-        val metadataObject = TrackWithAlbum(metadata.title!!, metadata.artist!!, metadata.album, metadata.albumArtist)
+        val trackObject = Track(metadata.title!!, metadata.artist!!, metadata.album, metadata.albumArtist)
         // i don't like this, we do 2x more db calls than necessary
-        val trackId = repository.getOrInsertTrack(metadataObject)
+        val trackId = repository.getOrInsertTrack(trackObject)
         val metadataWithIds = repository.getTrack(trackId)
 
         val event = Event.create(
-            metadata = metadataWithIds,
+            track = metadataWithIds,
             duration = metadata.duration,
             timestamp = timestamp,
             position = state.position,
@@ -102,16 +102,16 @@ class MediaEventRelay(
             val (newPlays, updatedPlays) = eventProcessor.process(listOf(savedEvent))
             logger.debug { "${newPlays.size} new plays, ${updatedPlays.size} updated plays" }
 
-            repository.insertPlays(newPlays)
-            repository.updatePlayEvents(updatedPlays)
+            repository.insertScrobbles(newPlays)
+            repository.updateScrobbleEvents(updatedPlays)
             newPlays.forEach { play ->
-                repository.insertEdit(PlayEdit.new(play))
+                repository.insertEdit(ScrobbleEdit.new(play))
             }
 
             val notifPlay = newPlays.lastOrNull { !it.isDeleted } ?: updatedPlays.lastOrNull { !it.isDeleted }
             notifPlay?.let { play ->
                 notificationManager.show(
-                    repository.getPlay(play.id)
+                    repository.getScrobble(play.id)
                         ?: throw IllegalStateException("can't find play by id ${play.id}"),
                 )
             }

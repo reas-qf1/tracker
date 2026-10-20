@@ -6,7 +6,7 @@ import com.reas.tracker2.settings.Settings
 import com.reas.tracker2.settings.chartSort
 import com.reas.tracker2.shared.Album
 import com.reas.tracker2.shared.TimePeriod
-import com.reas.tracker2.shared.TrackWithAlbum
+import com.reas.tracker2.shared.Track
 import com.reas.tracker2.ui.TrackerViewModel
 import com.reas.tracker2.ui.components.ChartEntryUiState
 import com.reas.tracker2.ui.navigation.ChartSort
@@ -20,7 +20,7 @@ class AlbumInfoScreenViewModel(
     private val networkRepository: NetworkRepository,
     private val settings: Settings,
 ) : TrackerViewModel() {
-    fun plays(album: Album, period: TimePeriod) = repository.getAlbumPlays(album, period).asIntStateFlow()
+    fun playCount(album: Album, period: TimePeriod) = repository.getAlbumPlayCount(album, period).asIntStateFlow()
 
     fun timePlayed(album: Album, period: TimePeriod) = repository.getAlbumTimePlayed(album, period).asDurationStateFlow()
 
@@ -30,7 +30,7 @@ class AlbumInfoScreenViewModel(
             .map { "#" + (it + 1).toString() }
             .asStringStateFlow()
 
-    fun playRank(album: Album, period: TimePeriod) =
+    fun rankByPlayCount(album: Album, period: TimePeriod) =
         repository
             .getAlbumRankByPlayCount(album, period)
             .map { "#" + (it + 1).toString() }
@@ -74,5 +74,5 @@ class AlbumInfoScreenViewModel(
 
     suspend fun getAlbumImageUrl(album: Album): String? = networkRepository.getAlbumImageUrl(album, "large")
 
-    suspend fun getTrackImageUrl(track: TrackWithAlbum): String? = track.asAlbum?.let { getAlbumImageUrl(it) }
+    suspend fun getTrackImageUrl(track: Track): String? = track.asAlbum?.let { getAlbumImageUrl(it) }
 }

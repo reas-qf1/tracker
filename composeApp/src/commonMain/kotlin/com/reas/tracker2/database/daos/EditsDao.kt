@@ -17,8 +17,8 @@ interface EditsDao {
     @Delete
     suspend fun delete(play: EditsEntity)
 
-    @Query("SELECT trackId FROM edits WHERE playId = :playId ORDER BY timestamp ASC LIMIT 1")
-    suspend fun getOriginalMetadata(playId: Uuid): Long?
+    @Query("SELECT trackId FROM edits WHERE scrobbleId = :scrobbleId ORDER BY timestamp ASC LIMIT 1")
+    suspend fun getOriginalMetadata(scrobbleId: Uuid): Long?
 
     @Query("SELECT COUNT(*) FROM edits")
     fun getEditCount(): Flow<Int>

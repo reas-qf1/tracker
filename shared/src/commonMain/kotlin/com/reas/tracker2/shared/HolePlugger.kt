@@ -10,36 +10,36 @@ class HolePlugger(
     private val clock: Clock = Clock.System,
 ) {
     private val plugJobs = mutableMapOf<String, Job>()
-    private val playFlow = MutableSharedFlow<Play>()
+    private val scrobbleFlow = MutableSharedFlow<Scrobble>()
 
-    fun register(play: Play) {
-        if (!play.lastPlaying) {
+    fun register(scrobble: Scrobble) {
+        if (!scrobble.lastPlaying) {
             return
         }
-        val key = play.key
+        val key = scrobble.key
         if (plugJobs.containsKey(key)) {
-            cancel(play)
+            cancel(scrobble)
         }
-        val delayTime = play.endTimestamp - clock.now()
+        val delayTime = scrobble.endTimestamp - clock.now()
         logger.debug { "launching job to plug hole for $key in $delayTime" }
         plugJobs[key] = scope.launch {
             delay(delayTime)
             logger.debug { "plugging hole for $key" }
             plugJobs.remove(key) // so that no one can cancel us
-            play.timePlayed += play.endTimestamp - play.lastTimestamp
-            play.plug(play.endTimestamp, play.duration, play.lastSpeed)
-            playFlow.emit(play)
+            scrobble.timePlayed += scrobble.endTimestamp - scrobble.lastTimestamp
+            scrobble.plug(scrobble.endTimestamp, scrobble.duration, scrobble.lastSpeed)
+            scrobbleFlow.emit(scrobble)
         }
     }
 
-    fun register(plays: List<Play>) {
-        plays.forEach { play ->
+    fun register(scrobbles: List<Scrobble>) {
+        scrobbles.forEach { play ->
             register(play)
         }
     }
 
-    fun cancel(play: Play) {
-        val key = play.key
+    fun cancel(scrobble: Scrobble) {
+        val key = scrobble.key
         if (plugJobs.containsKey(key)) {
             logger.debug { "cancelling job to plug hole for $key" }
             plugJobs[key]!!.cancel()
@@ -51,8 +51,8 @@ class HolePlugger(
         plugJobs.values.forEach { it.cancel() }
     }
 
-    suspend fun collectPlays(block: suspend (Play) -> Unit) {
-        playFlow.collect(block)
+    suspend fun collectPlays(block: suspend (Scrobble) -> Unit) {
+        scrobbleFlow.collect(block)
     }
 
     companion object {

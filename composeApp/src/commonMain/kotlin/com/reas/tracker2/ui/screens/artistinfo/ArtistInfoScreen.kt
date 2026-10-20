@@ -39,17 +39,17 @@ fun ArtistInfoScreen(
     val scope = rememberCoroutineScope()
     val period = TimePeriod.ALLTIME
 
-    val plays by rememberAsState { viewModel.plays(artist, period) }
+    val playCount by rememberAsState { viewModel.playCount(artist, period) }
     val timePlayed by rememberAsState { viewModel.timePlayed(artist, period) }
-    val playsAsString = if (plays == -1) "..." else plays.toString()
+    val playCountAsString = if (playCount == -1) "..." else playCount.toString()
     val timePlayedAsString = timePlayed.toDisplayString()
-    val timeRank by rememberAsState { viewModel.rank(artist, period) }
-    val playRank by rememberAsState { viewModel.playRank(artist, period) }
+    val rank by rememberAsState { viewModel.rank(artist, period) }
+    val rankByPlayCount by rememberAsState { viewModel.rankByPlayCount(artist, period) }
 
-    val timeAlbums by rememberAsState { viewModel.topAlbums(artist, period) }
-    val playAlbums by rememberAsState { viewModel.topAlbumsByPlayCount(artist, period) }
-    val timeTracks by rememberAsState { viewModel.topTracks(artist, period) }
-    val playTracks by rememberAsState { viewModel.topTracksByPlayCount(artist, period) }
+    val topAlbums by rememberAsState { viewModel.topAlbums(artist, period) }
+    val topAlbumsByPlayCount by rememberAsState { viewModel.topAlbumsByPlayCount(artist, period) }
+    val topTracks by rememberAsState { viewModel.topTracks(artist, period) }
+    val topTracksByPlayCount by rememberAsState { viewModel.topTracksByPlayCount(artist, period) }
 
     Column(
         modifier = modifier.padding(top = 5.dp, start = 5.dp, end = 5.dp),
@@ -76,7 +76,7 @@ fun ArtistInfoScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 InfoBox {
-                    AutosizingText(playsAsString, style = MaterialTheme.typography.headlineSmall)
+                    AutosizingText(playCountAsString, style = MaterialTheme.typography.headlineSmall)
                     Text(stringResource(Res.string.plays).lowercase(), color = MaterialTheme.colorScheme.secondary)
                 }
                 InfoBox {
@@ -85,14 +85,14 @@ fun ArtistInfoScreen(
                 }
                 InfoBox {
                     if (sort.byTime) {
-                        AutosizingText(timeRank, style = MaterialTheme.typography.headlineSmall)
+                        AutosizingText(rank, style = MaterialTheme.typography.headlineSmall)
                         Text(
                             stringResource(Res.string.in_charts_by_time),
                             color = MaterialTheme.colorScheme.secondary,
                             textAlign = TextAlign.Center,
                         )
                     } else {
-                        AutosizingText(playRank, style = MaterialTheme.typography.headlineSmall)
+                        AutosizingText(rankByPlayCount, style = MaterialTheme.typography.headlineSmall)
                         Text(
                             stringResource(Res.string.in_charts_by_plays),
                             color = MaterialTheme.colorScheme.secondary,
@@ -112,8 +112,8 @@ fun ArtistInfoScreen(
             )
             DoubleChartColumn(
                 sort.byTime,
-                timeAlbums,
-                playAlbums,
+                topAlbums,
+                topAlbumsByPlayCount,
                 onClick = { entry -> applicationState.navigate(entry.infoBottomSheet) },
             )
 
@@ -127,8 +127,8 @@ fun ArtistInfoScreen(
             )
             DoubleChartColumn(
                 sort.byTime,
-                timeTracks,
-                playTracks,
+                topTracks,
+                topTracksByPlayCount,
                 onClick = { entry -> applicationState.navigate(entry.infoBottomSheet) },
             )
 

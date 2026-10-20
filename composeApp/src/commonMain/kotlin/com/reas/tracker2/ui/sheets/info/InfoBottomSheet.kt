@@ -45,14 +45,14 @@ fun InfoBottomSheet(
 
     Column(modifier = modifier) {
         track?.let {
-            val trackPlays by rememberAsState { viewModel.trackPlays(trackO) }
+            val trackPlayCount by rememberAsState { viewModel.trackPlayCount(trackO) }
             val trackTimePlayed by rememberAsState { viewModel.trackTimePlayed(trackO) }
             HistoryBottomSheetComponent(
                 icon = Icons.Filled.MusicNote,
                 iconDescription = stringResource(Res.string.track),
                 header = track,
                 buttonContents = listOf(
-                    Res.string.track_plays to trackPlays,
+                    Res.string.track_plays to trackPlayCount,
                     Res.string.time_listened to trackTimePlayed,
                 ),
                 onMainButton = {
@@ -66,14 +66,14 @@ fun InfoBottomSheet(
         }
 
         ScrollablePages(artists.size) { i ->
-            val artistPlays by rememberAsState { viewModel.artistPlays(artists[i]) }
+            val artistPlayCount by rememberAsState { viewModel.artistPlayCount(artists[i]) }
             val artistTimePlayed by rememberAsState { viewModel.artistTimePlayed(artists[i]) }
             HistoryBottomSheetComponent(
                 icon = Icons.Filled.Person,
                 iconDescription = stringResource(Res.string.artist),
                 header = artists[i].name,
                 buttonContents = listOf(
-                    Res.string.artist_plays to artistPlays,
+                    Res.string.artist_plays to artistPlayCount,
                     Res.string.time_listened to artistTimePlayed,
                 ),
                 onMore = {
@@ -85,7 +85,7 @@ fun InfoBottomSheet(
         album?.let {
             albumO!!
             val differentArtists = albumArtists != null && artists.toSet() != albumArtists.toSet()
-            val albumPlays by rememberAsState { viewModel.albumPlays(albumO) }
+            val albumPlayCount by rememberAsState { viewModel.albumPlayCount(albumO) }
             val albumTimePlayed by rememberAsState { viewModel.albumTimePlayed(albumO) }
             BottomSheetSpacer()
             HistoryBottomSheetComponent(
@@ -93,7 +93,7 @@ fun InfoBottomSheet(
                 iconDescription = stringResource(Res.string.album),
                 header = album,
                 buttonContents = listOf(
-                    Res.string.album_plays to albumPlays,
+                    Res.string.album_plays to albumPlayCount,
                     Res.string.time_listened to albumTimePlayed,
                 ),
                 onMore = {
