@@ -97,7 +97,7 @@ class MediaEventRelay(
                 return
             }
             val savedEvent = map(event, lastEvent)
-            lastEvent = savedEvent
+            lastEvent = event
 
             repository.writeTransaction {
                 val (newPlays, updatedPlays) = eventProcessor.process(listOf(savedEvent))
