@@ -37,6 +37,7 @@ class Repository(
             id = id,
             scrobbleId = scrobbleId,
             trackId = track.id,
+            isDeleted = isDeleted,
             timestamp = timestamp,
             reason = reason,
         )

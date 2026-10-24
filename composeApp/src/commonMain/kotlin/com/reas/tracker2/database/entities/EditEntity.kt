@@ -15,6 +15,7 @@ data class EditEntity(
     @PrimaryKey val id: Uuid,
     val scrobbleId: Uuid,
     val trackId: Long,
+    val isDeleted: Boolean,
     val timestamp: Instant,
     val reason: ScrobbleEdit.EditReason,
 )

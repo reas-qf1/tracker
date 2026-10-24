@@ -309,6 +309,7 @@ data class ScrobbleEdit(
     val scrobbleId: Uuid,
     val timestamp: Instant,
     val track: Track,
+    val isDeleted: Boolean,
     val reason: EditReason,
 ) {
     @Serializable
@@ -328,6 +329,7 @@ data class ScrobbleEdit(
                 scrobbleId = scrobble.id,
                 timestamp = scrobble.timestamp,
                 track = scrobble.metadata,
+                isDeleted = false,
                 reason = EditReason.Initial,
             )
 
@@ -338,6 +340,18 @@ data class ScrobbleEdit(
                 scrobbleId = scrobble.id,
                 timestamp = Clock.System.now(),
                 track = newTrack,
+                isDeleted = false,
+                reason = reason,
+            )
+
+        @OptIn(ExperimentalUuidApi::class)
+        fun delete(scrobble: Scrobble, reason: EditReason) =
+            ScrobbleEdit(
+                id = Uuid.generateV4(),
+                scrobbleId = scrobble.id,
+                timestamp = Clock.System.now(),
+                track = scrobble.metadata,
+                isDeleted = true,
                 reason = reason,
             )
     }
