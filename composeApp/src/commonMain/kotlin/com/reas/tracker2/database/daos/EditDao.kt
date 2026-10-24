@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlin.uuid.Uuid
 
 @Dao
-interface EditsDao {
+interface EditDao {
     @Insert(onConflict = REPLACE)
     suspend fun insert(play: EditEntity): Long
 

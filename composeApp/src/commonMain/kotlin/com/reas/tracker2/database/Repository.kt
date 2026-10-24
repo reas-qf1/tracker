@@ -100,7 +100,7 @@ class Repository(
     suspend fun getLastScrobbleFromSource(source: Source): Scrobble? =
         db.scrobbleDao().getLastScrobbleFromSource(source.client, source.app)?.toObject()
 
-    suspend fun getFirstEdit(scrobble: Scrobble): EditWithMetadata? = db.editsDao().getFirstEdit(scrobble.id)
+    suspend fun getFirstEdit(scrobble: Scrobble): EditWithMetadata? = db.editDao().getFirstEdit(scrobble.id)
 
     suspend fun markScrobbleDeleted(scrobble: Scrobble) = db.scrobbleDao().markScrobbleDeleted(scrobble.id)
 
@@ -206,13 +206,13 @@ class Repository(
     fun getTrackRankByPlayCount(track: Track, period: TimePeriod): Flow<Int> =
         db.scrobbleDao().getTrackRankByPlayCount(track.id, period.start, period.end)
 
-    suspend fun insertEdit(edit: ScrobbleEdit) = db.editsDao().insert(edit.toEntity())
+    suspend fun insertEdit(edit: ScrobbleEdit) = db.editDao().insert(edit.toEntity())
 
-    suspend fun updateEdit(edit: ScrobbleEdit) = db.editsDao().update(edit.toEntity())
+    suspend fun updateEdit(edit: ScrobbleEdit) = db.editDao().update(edit.toEntity())
 
-    suspend fun deleteEdit(edit: ScrobbleEdit) = db.editsDao().delete(edit.toEntity())
+    suspend fun deleteEdit(edit: ScrobbleEdit) = db.editDao().delete(edit.toEntity())
 
     fun getPlayCount(): Flow<Int> = db.scrobbleDao().getPlayCount()
 
-    fun getEditCount(): Flow<Int> = db.editsDao().getEditCount()
+    fun getEditCount(): Flow<Int> = db.editDao().getEditCount()
 }

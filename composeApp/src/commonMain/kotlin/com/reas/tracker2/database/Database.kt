@@ -1,7 +1,7 @@
 package com.reas.tracker2.database
 
 import androidx.room3.*
-import com.reas.tracker2.database.daos.EditsDao
+import com.reas.tracker2.database.daos.EditDao
 import com.reas.tracker2.database.daos.ScrobbleDao
 import com.reas.tracker2.database.daos.TrackDao
 import com.reas.tracker2.database.entities.*
@@ -32,7 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun trackDao(): TrackDao
 
-    abstract fun editsDao(): EditsDao
+    abstract fun editDao(): EditDao
 
     companion object {
         fun getDatabase(builder: Builder<AppDatabase>): AppDatabase =
