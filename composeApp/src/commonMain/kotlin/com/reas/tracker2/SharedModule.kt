@@ -12,6 +12,7 @@ import com.reas.tracker2.settings.createDataStore
 import com.reas.tracker2.shared.EventProcessor
 import com.reas.tracker2.shared.EventProcessorAdapter
 import com.reas.tracker2.shared.HolePlugger
+import com.reas.tracker2.shared.HolePluggerAdapter
 import com.reas.tracker2.ui.dialogs.delete.DeleteDialogViewModel
 import com.reas.tracker2.ui.screens.albuminfo.AlbumInfoScreenViewModel
 import com.reas.tracker2.ui.screens.artistinfo.ArtistInfoScreenViewModel
@@ -23,10 +24,7 @@ import com.reas.tracker2.ui.screens.trackhistory.TrackHistoryViewModel
 import com.reas.tracker2.ui.screens.trackinfo.TrackInfoScreenViewModel
 import com.reas.tracker2.ui.sheets.edit.EditBottomSheetViewModel
 import com.reas.tracker2.ui.sheets.info.InfoBottomSheetsViewModel
-import com.reas.tracker2.util.EventProcessorAdapterImpl
-import com.reas.tracker2.util.InMemoryLog
-import com.reas.tracker2.util.RawMetadataRegistrer
-import com.reas.tracker2.util.SecretManager
+import com.reas.tracker2.util.*
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.bind
@@ -35,16 +33,15 @@ import org.koin.dsl.module
 val sharedModule = module {
     singleOf(::createDataStore)
     singleOf(::DataStoreSettings) bind Settings::class
-    single {
-        Repository(AppDatabase.getDatabase(get()))
-    }
+    single { Repository(AppDatabase.getDatabase(get())) }
     singleOf(::KtorNetworkRepository) bind NetworkRepository::class
     singleOf(::httpClient)
     singleOf(::landscapistInstance)
 
     singleOf(::EventProcessorAdapterImpl) bind EventProcessorAdapter::class
     singleOf(::EventProcessor)
-    single { HolePlugger() }
+    singleOf(::HolePluggerAdapterImpl) bind HolePluggerAdapter::class
+    singleOf(::HolePlugger)
     singleOf(::InMemoryLog)
     singleOf(::SecretManager)
     singleOf(::RawMetadataRegistrer)
