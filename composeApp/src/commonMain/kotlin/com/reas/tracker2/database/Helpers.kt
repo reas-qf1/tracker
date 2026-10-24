@@ -75,6 +75,16 @@ data class ScrobbleWithData(
         )
 }
 
+data class EditWithMetadata(
+    @Embedded val edit: EditEntity,
+    @Relation(
+        entity = TrackEntity::class,
+        parentColumns = ["trackId"],
+        entityColumns = ["trackId"],
+    )
+    val metadata: TrackWithData,
+)
+
 data class ArtistWithPlayCount(
     @Embedded val artist: Artist,
     val playCount: Int,

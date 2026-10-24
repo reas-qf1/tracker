@@ -11,7 +11,7 @@ class EventProcessorAdapterImpl(
     override suspend fun getLastScrobbleFromSource(source: Source): Scrobble? {
         return repository.readTransaction {
             val play = repository.getLastScrobbleFromSource(source) ?: return@readTransaction null
-            val metadata = repository.getOriginalMetadata(play) ?: return@readTransaction play
+            val metadata = repository.getFirstEdit(play)?.metadata?.toObject() ?: return@readTransaction play
             play.copy(metadata = metadata)
         }
     }

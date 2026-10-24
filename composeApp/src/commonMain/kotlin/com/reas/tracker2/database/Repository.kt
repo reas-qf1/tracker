@@ -100,7 +100,7 @@ class Repository(
     suspend fun getLastScrobbleFromSource(source: Source): Scrobble? =
         db.scrobbleDao().getLastScrobbleFromSource(source.client, source.app)?.toObject()
 
-    suspend fun getOriginalMetadata(scrobble: Scrobble): Track? = db.editsDao().getOriginalMetadata(scrobble.id)?.let { getTrackById(it) }
+    suspend fun getFirstEdit(scrobble: Scrobble): EditWithMetadata? = db.editsDao().getFirstEdit(scrobble.id)
 
     suspend fun markScrobbleDeleted(scrobble: Scrobble) = db.scrobbleDao().markScrobbleDeleted(scrobble.id)
 

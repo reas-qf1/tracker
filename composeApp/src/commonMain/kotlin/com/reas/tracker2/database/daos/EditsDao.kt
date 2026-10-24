@@ -2,6 +2,7 @@ package com.reas.tracker2.database.daos
 
 import androidx.room3.*
 import androidx.room3.OnConflictStrategy.Companion.REPLACE
+import com.reas.tracker2.database.EditWithMetadata
 import com.reas.tracker2.database.entities.EditEntity
 import kotlinx.coroutines.flow.Flow
 import kotlin.uuid.Uuid
@@ -17,8 +18,8 @@ interface EditsDao {
     @Delete
     suspend fun delete(play: EditEntity)
 
-    @Query("SELECT trackId FROM edits WHERE scrobbleId = :scrobbleId ORDER BY timestamp ASC LIMIT 1")
-    suspend fun getOriginalMetadata(scrobbleId: Uuid): Long?
+    @Query("SELECT * FROM edits WHERE scrobbleId = :scrobbleId ORDER BY timestamp ASC LIMIT 1")
+    suspend fun getFirstEdit(scrobbleId: Uuid): EditWithMetadata?
 
     @Query("SELECT COUNT(*) FROM edits")
     fun getEditCount(): Flow<Int>
