@@ -5,6 +5,7 @@ ktor:
     modules:
       - com.reas.tracker2.ApplicationKt.installPlugins
       - com.reas.tracker2.RoutingKt.configureRouting
+      - com.reas.tracker2.BackgroundProcessesKt.backgroundProcesses
 
 jwt:
   secret: "secret"

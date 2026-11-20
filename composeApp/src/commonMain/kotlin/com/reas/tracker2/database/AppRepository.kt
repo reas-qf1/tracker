@@ -4,15 +4,16 @@ import androidx.paging.PagingSource
 import androidx.room3.useReaderConnection
 import androidx.room3.useWriterConnection
 import com.reas.tracker2.database.entities.*
+import com.reas.tracker2.internalsServer.Repository
 import com.reas.tracker2.shared.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
-class Repository(
+class AppRepository(
     private val db: AppDatabase,
-) {
+) : Repository {
     private fun ArtistEntity.toObject() = Artist(name, artistId)
 
     private fun Scrobble.toEntity() =
@@ -42,11 +43,11 @@ class Repository(
             reason = reason,
         )
 
-    suspend fun <T> readTransaction(block: suspend () -> T): T = db.useReaderConnection { block() }
+    override suspend fun <T> readTransaction(block: suspend () -> T): T = db.useReaderConnection { block() }
 
-    suspend fun <T> writeTransaction(block: suspend () -> T): T = db.useWriterConnection { block() }
+    override suspend fun <T> writeTransaction(block: suspend () -> T): T = db.useWriterConnection { block() }
 
-    suspend fun insertTrack(name: String, artists: ArtistList, album: Album?): Long =
+    override suspend fun insertTrack(name: String, artists: ArtistList, album: Album?): Long =
         db.trackDao().insertTrack(
             TrackEntity(
                 name = name,
@@ -56,56 +57,64 @@ class Repository(
             ),
         )
 
-    suspend fun insertAlbum(name: String, artists: ArtistList): Long =
+    override suspend fun insertAlbum(name: String, artists: ArtistList): Long =
         db.trackDao().insertAlbum(
             AlbumEntity(name = name, artists = artists.raw, artistIds = artists.ids),
         )
 
-    suspend fun insertArtists(artists: List<String>): List<Long> = db.trackDao().insertArtists(artists.map { ArtistEntity(name = it) })
+    override suspend fun insertArtists(artists: List<String>): List<Long> =
+        db.trackDao().insertArtists(artists.map { ArtistEntity(name = it) })
 
-    suspend fun associateArtistsWithAlbum(albumId: Long, artists: ArtistList) =
+    override suspend fun associateArtistsWithAlbum(albumId: Long, artists: ArtistList) =
         db.trackDao().insertAlbumArtistCrossRefs(
             artists.map { artist ->
                 AlbumArtistCrossRef(albumId, artist.id)
             },
         )
 
-    suspend fun associateArtistsWithTrack(trackId: Long, artists: ArtistList) =
+    override suspend fun associateArtistsWithTrack(trackId: Long, artists: ArtistList) =
         db.trackDao().insertTrackArtistCrossRefs(
             artists.map { artist ->
                 TrackArtistCrossRef(trackId, artist.id)
             },
         )
 
-    suspend fun getArtists(names: List<String>): List<Artist> = db.trackDao().getArtists(names).map { it.toObject() }
+    override suspend fun getArtists(names: List<String>): List<Artist> = db.trackDao().getArtists(names).map { it.toObject() }
 
-    suspend fun getAlbum(name: String, artists: ArtistList): Album? = db.trackDao().getAlbum(name, artists.ids)?.toObject()
+    override suspend fun getAlbum(name: String, artists: ArtistList): Album? = db.trackDao().getAlbum(name, artists.ids)?.toObject()
 
-    suspend fun getTrack(name: String, artists: ArtistList, album: Album?): Track? =
+    override suspend fun getTrack(name: String, artists: ArtistList, album: Album?): Track? =
         db.trackDao().getTrack(name, artists.ids, album?.id)?.toObject()
 
     suspend fun getTrackById(id: Long): Track = db.trackDao().getTrackById(id).toObject()
 
-    suspend fun insertScrobble(scrobble: Scrobble): Long = db.scrobbleDao().insert(scrobble.toEntity())
+    override suspend fun insertScrobble(scrobble: Scrobble) {
+        db.scrobbleDao().insert(scrobble.toEntity())
+    }
 
-    suspend fun insertScrobbles(scrobbles: List<Scrobble>) = db.scrobbleDao().insertBatch(scrobbles.map { it.toEntity() })
+    override suspend fun insertScrobbles(scrobbles: List<Scrobble>) = db.scrobbleDao().insertBatch(scrobbles.map { it.toEntity() })
 
     suspend fun deleteScrobble(scrobble: Scrobble) = db.scrobbleDao().delete(scrobble.toEntity())
 
     suspend fun updateScrobbles(scrobble: Scrobble) = db.scrobbleDao().update(scrobble.toEntity())
 
-    suspend fun updateScrobbleEvents(scrobbles: List<Scrobble>) = db.scrobbleDao().updateAssociatedEvents(scrobbles.map { it.toEntity() })
+    override suspend fun updateScrobbleEvents(scrobbles: List<Scrobble>) =
+        db.scrobbleDao().updateAssociatedEvents(
+            scrobbles.map {
+                it.toEntity()
+            },
+        )
 
-    suspend fun getScrobble(id: Uuid): Scrobble? = db.scrobbleDao().getScrobble(id)?.toObject()
+    override suspend fun getScrobble(id: Uuid): Scrobble? = db.scrobbleDao().getScrobble(id)?.toObject()
 
-    suspend fun getLastScrobbleFromSource(source: Source): Scrobble? =
+    override suspend fun getLastScrobbleFromSource(source: Source): Scrobble? =
         db.scrobbleDao().getLastScrobbleFromSource(source.client, source.app)?.toObject()
 
-    suspend fun getFirstEdit(scrobble: Scrobble): EditWithMetadata? = db.editDao().getFirstEdit(scrobble.id)
+    override suspend fun getOriginalMetadata(scrobble: Scrobble): Track? = db.editDao().getFirstEdit(scrobble.id)?.metadataToObject()
 
     suspend fun markScrobbleDeleted(scrobble: Scrobble) = db.scrobbleDao().markScrobbleDeleted(scrobble.id)
 
-    fun getNowPlaying(): Flow<List<Scrobble>> = db.scrobbleDao().getNowPlaying().map { it.map { it.toObject() } }
+    override fun getNowPlaying(): Flow<List<Scrobble>> = db.scrobbleDao().getNowPlaying().map { it.map { it.toObject() } }
 
     fun getRecentScrobbles(): PagingSource<Int, ScrobbleWithData> = db.scrobbleDao().getRecentScrobbles()
 
@@ -207,7 +216,9 @@ class Repository(
     fun getTrackRankByPlayCount(track: Track, period: TimePeriod): Flow<Int> =
         db.scrobbleDao().getTrackRankByPlayCount(track.id, period.start, period.end)
 
-    suspend fun insertEdit(edit: ScrobbleEdit) = db.editDao().insert(edit.toEntity())
+    override suspend fun insertEdit(edit: ScrobbleEdit) {
+        db.editDao().insert(edit.toEntity())
+    }
 
     suspend fun updateEdit(edit: ScrobbleEdit) = db.editDao().update(edit.toEntity())
 

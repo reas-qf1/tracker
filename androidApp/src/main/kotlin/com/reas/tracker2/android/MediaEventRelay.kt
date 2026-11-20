@@ -2,29 +2,28 @@ package com.reas.tracker2.android
 
 import android.media.MediaMetadata
 import android.media.session.PlaybackState
-import com.reas.tracker2.database.Repository
+import com.reas.tracker2.internalsServer.EventProcessor
+import com.reas.tracker2.internalsServer.LocalServer
 import com.reas.tracker2.shared.*
 import com.reas.tracker2.util.NowPlayingNotificationManager
-import com.reas.tracker2.util.RawMetadataRegistrer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant
 
 class MediaEventRelay(
-    private val repository: Repository,
-    private val eventProcessor: EventProcessor,
+    private val server: LocalServer,
     private val notificationManager: NowPlayingNotificationManager,
-    private val rawMetadataRegistrer: RawMetadataRegistrer,
 ) {
     private val GRACE_PERIOD = 500.milliseconds
 
-    private val logger = KotlinLogging.logger { }
-    private var lastEvent: Event? = null
+    private val logger = KotlinLogging.logger {}
+    private var lastEvent: RawEvent? = null
     private val lock = Mutex()
 
-    fun filter(event: Event, lastEvent: Event?): Boolean {
+    fun filter(event: RawEvent, lastEvent: RawEvent?): Boolean {
         if (lastEvent == null && !event.isPlaying) {
             return false
         }
@@ -43,7 +42,7 @@ class MediaEventRelay(
         return true
     }
 
-    fun map(event: Event, lastEvent: Event?): Event {
+    fun map(event: RawEvent, lastEvent: RawEvent?): RawEvent {
         var newEvent = event
         if (event.isPlaying && event.position < EventProcessor.SKIP_MIN_DURATION) {
             newEvent = newEvent.copy(info = newEvent.info.copy(position = Duration.ZERO))
@@ -78,17 +77,20 @@ class MediaEventRelay(
             return
         }
 
-        val isPlaying = state.state == PlaybackState.STATE_PLAYING
-        val rawMetadata = RawMetadata(metadata.title!!, metadata.artist!!, metadata.album, metadata.albumArtist)
-        val track = rawMetadataRegistrer.register(rawMetadata)
-
-        val event = Event.create(
-            track = track,
-            duration = metadata.duration,
-            timestamp = timestamp,
-            position = state.position,
-            state = if (isPlaying) EventState.PLAYING else EventState.STOPPED,
-            speed = state.playbackSpeed.toDouble(),
+        val event = RawEvent(
+            metadata = RawMetadata(
+                track = metadata.title!!,
+                artists = RawArtistList(metadata.artist!!),
+                album = metadata.album,
+                albumArtists = metadata.albumArtist?.let { RawArtistList(it) },
+            ),
+            duration = metadata.duration.milliseconds,
+            info = EventInfo(
+                timestamp = Instant.fromEpochMilliseconds(timestamp),
+                position = state.position.milliseconds,
+                state = if (state.state == PlaybackState.STATE_PLAYING) EventState.PLAYING else EventState.STOPPED,
+                speed = state.playbackSpeed.toDouble(),
+            ),
             source = Source.local(appId),
         )
 
@@ -99,23 +101,11 @@ class MediaEventRelay(
             val savedEvent = map(event, lastEvent)
             lastEvent = event
 
-            repository.writeTransaction {
-                val (newPlays, updatedPlays) = eventProcessor.process(listOf(savedEvent))
-                logger.debug { "${newPlays.size} new plays, ${updatedPlays.size} updated plays" }
-
-                repository.insertScrobbles(newPlays)
-                repository.updateScrobbleEvents(updatedPlays)
-                newPlays.forEach { play ->
-                    repository.insertEdit(ScrobbleEdit.new(play))
-                }
-
-                val notifPlay = newPlays.lastOrNull { !it.isDeleted } ?: updatedPlays.lastOrNull { !it.isDeleted }
-                notifPlay?.let { play ->
-                    notificationManager.show(
-                        repository.getScrobble(play.id)
-                            ?: throw IllegalStateException("can't find play by id ${play.id}"),
-                    )
-                }
+            val notifScrobble = server.submit(listOf(savedEvent)).singleOrNull()
+            if (notifScrobble != null) {
+                notificationManager.show(notifScrobble)
+            } else {
+                logger.debug { "can't update notif: submit returned 0 or >1 scrobbles" }
             }
         }
     }

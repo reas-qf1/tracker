@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
@@ -18,11 +19,13 @@ kotlin {
     dependencies {
         implementation(projects.composeApp)
         implementation(projects.shared)
+        implementation(projects.internalsServer)
         implementation(libs.androidx.core)
         implementation(libs.androidx.lifecycle.runtime)
         implementation(libs.androidx.activity.compose)
         implementation(libs.androidx.activity)
         implementation(libs.androidx.work.runtime)
+        implementation(libs.kotlinx.serialization.json)
         implementation(libs.snitcher)
         implementation(project.dependencies.platform(libs.koin.bom))
         implementation(libs.koin.android)

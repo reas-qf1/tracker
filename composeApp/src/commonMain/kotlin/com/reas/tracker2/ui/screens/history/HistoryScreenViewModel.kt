@@ -2,7 +2,7 @@ package com.reas.tracker2.ui.screens.history
 
 import androidx.paging.PagingData
 import androidx.paging.insertSeparators
-import com.reas.tracker2.database.Repository
+import com.reas.tracker2.database.AppRepository
 import com.reas.tracker2.network.NetworkRepository
 import com.reas.tracker2.shared.Scrobble
 import com.reas.tracker2.ui.TrackerViewModel
@@ -27,7 +27,7 @@ sealed class HistoryEntry {
 }
 
 class HistoryScreenViewModel(
-    private val repository: Repository,
+    private val repository: AppRepository,
     private val networkRepository: NetworkRepository,
 ) : TrackerViewModel() {
     val history: Flow<PagingData<HistoryEntry>>

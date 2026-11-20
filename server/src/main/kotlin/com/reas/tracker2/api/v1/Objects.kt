@@ -4,13 +4,13 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
 @Serializable
-data class V1LoginInfo(
+data class LoginInfoV1(
     val username: String,
     val password: String,
 )
 
 @Serializable
-data class V1TokenInfo(
+data class TokenInfoV1(
     val prefix: String,
     val hash: String,
     val createdAt: Instant,

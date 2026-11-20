@@ -1,6 +1,6 @@
 package com.reas.tracker2.ui.sheets.info
 
-import com.reas.tracker2.database.Repository
+import com.reas.tracker2.database.AppRepository
 import com.reas.tracker2.shared.Album
 import com.reas.tracker2.shared.Artist
 import com.reas.tracker2.shared.TimePeriod
@@ -10,7 +10,7 @@ import com.reas.tracker2.util.toDisplayString
 import kotlinx.coroutines.flow.map
 
 class InfoBottomSheetsViewModel(
-    private val repository: Repository,
+    private val repository: AppRepository,
 ) : TrackerViewModel() {
     fun artistPlayCount(artist: Artist) =
         repository

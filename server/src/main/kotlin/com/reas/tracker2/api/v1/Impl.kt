@@ -4,8 +4,10 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.reas.tracker2.Conflict
 import com.reas.tracker2.Unauthorized
-import com.reas.tracker2.UserPrincipal
+import com.reas.tracker2.api.v1.primitives.EventV1
 import com.reas.tracker2.database.AuthRepository
+import com.reas.tracker2.internalsServer.LocalServer
+import com.reas.tracker2.shared.Scrobble
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.*
@@ -13,25 +15,19 @@ import kotlin.time.Instant
 
 class ApiV1Impl : KoinComponent {
     val authRepository: AuthRepository by inject()
+    val server: LocalServer by inject()
 
     lateinit var jwtSecret: String
     lateinit var jwtIssuer: String
     lateinit var jwtAudience: String
 
-    fun setJwtParameters(
-        secret: String,
-        issuer: String,
-        audience: String,
-    ) {
+    fun setJwtParameters(secret: String, issuer: String, audience: String) {
         jwtSecret = secret
         jwtIssuer = issuer
         jwtAudience = audience
     }
 
-    fun register(
-        username: String,
-        password: String,
-    ) {
+    fun register(username: String, password: String) {
         try {
             authRepository.addUser(username, password)
         } catch (e: AuthRepository.UserAlreadyExistsException) {
@@ -39,10 +35,7 @@ class ApiV1Impl : KoinComponent {
         }
     }
 
-    fun login(
-        username: String,
-        password: String,
-    ): String {
+    fun login(username: String, password: String): String {
         if (!authRepository.validate(username, password)) {
             throw Unauthorized("username or password are incorrect")
         }
@@ -60,61 +53,36 @@ class ApiV1Impl : KoinComponent {
 
     fun getClients(username: String): List<String> = authRepository.getClients(username)
 
-    fun addClient(
-        username: String,
-        clientName: String,
-    ) {
+    fun addClient(username: String, clientName: String) {
         authRepository.addClient(username, clientName)
     }
 
-    fun deleteClient(
-        username: String,
-        clientName: String,
-    ) {
+    fun deleteClient(username: String, clientName: String) {
         authRepository.deleteClient(username, clientName)
     }
 
-    fun getTokens(
-        username: String,
-        clientName: String,
-    ): List<V1TokenInfo> {
+    fun getTokens(username: String, clientName: String): List<TokenInfoV1> {
         val tokens = authRepository.getTokens(username, clientName)
         return tokens.map {
-            V1TokenInfo(it.prefix, it.hash.toHexString(), it.createdAt, it.expiresAt)
+            TokenInfoV1(it.prefix, it.hash.toHexString(), it.createdAt, it.expiresAt)
         }
     }
 
-    fun addToken(
-        username: String,
-        clientName: String,
-        expiresAt: Instant?,
-    ) {
+    fun addToken(username: String, clientName: String, expiresAt: Instant?): String =
         authRepository.addToken(username, clientName, expiresAt ?: Instant.DISTANT_FUTURE)
-    }
 
-    fun deleteAllTokens(
-        username: String,
-        clientName: String,
-    ) {
+    fun deleteAllTokens(username: String, clientName: String) {
         authRepository.deleteAllTokens(username, clientName)
     }
 
-    fun deleteToken(
-        username: String,
-        token: String,
-    ) {
+    fun deleteToken(username: String, token: String) {
         authRepository.deleteToken(username, token)
     }
 
-    fun deleteTokenByHash(
-        username: String,
-        hash: ByteArray,
-    ) {
+    fun deleteTokenByHash(username: String, hash: ByteArray) {
         authRepository.deleteTokenByHash(username, hash)
     }
 
-    fun test(principal: UserPrincipal): String {
-        val (username, clientName) = principal
-        return "Authenticated as user = $username client = $clientName"
-    }
+    suspend fun submit(events: List<EventV1>, username: String, clientName: String): List<Scrobble> =
+        server.submit(events.map { it.toEvent(username, clientName) })
 }

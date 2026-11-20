@@ -1,35 +1,49 @@
-package com.reas.tracker2.shared
+package com.reas.tracker2.internalsServer
 
+import com.reas.tracker2.shared.Event
+import com.reas.tracker2.shared.Scrobble
+import com.reas.tracker2.shared.Source
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.time.Duration.Companion.seconds
 
 class EventProcessor(
-    private val adapter: EventProcessorAdapter,
+    private val repository: Repository,
 ) {
     companion object {
         val SKIP_MIN_DURATION = 2.seconds
         private val logger = KotlinLogging.logger {}
     }
 
-    suspend fun process(snapshot: List<Event>): Pair<List<Scrobble>, List<Scrobble>> {
+    private suspend fun getLastScrobbleFromSource(source: Source): Scrobble? {
+        return repository.readTransaction {
+            val play = repository.getLastScrobbleFromSource(source) ?: return@readTransaction null
+            val metadata = repository.getOriginalMetadata(play) ?: return@readTransaction play
+            play.copy(metadata = metadata)
+        }
+    }
+
+    suspend fun process(snapshot: List<Event>): Result {
         logger.debug { "processing ${snapshot.size} events" }
         val newScrobbles = mutableListOf<Scrobble>()
         val updatedScrobbles = mutableListOf<Scrobble>()
+        val pluggedScrobbles = mutableListOf<Scrobble>()
 
         snapshot.groupBy { it.source }.forEach { (source, events) ->
-            processSingleSource(newScrobbles, updatedScrobbles, source, events)
+            processSingleSource(newScrobbles, updatedScrobbles, pluggedScrobbles, source, events)
         }
-        return newScrobbles to updatedScrobbles
+        return Result(newScrobbles, updatedScrobbles, pluggedScrobbles)
     }
 
     private suspend fun processSingleSource(
         newScrobbles: MutableList<Scrobble>,
         updatedScrobbles: MutableList<Scrobble>,
+        pluggedScrobbles: MutableList<Scrobble>,
         source: Source,
         events: List<Event>,
     ) {
-        var play = adapter.getLastScrobbleFromSource(source)
+        var play = getLastScrobbleFromSource(source)
         var updatingPlay = true
+        var pluggingPlay = true
 
         val eventsSorted = events.sortedBy { it.timestamp }
         if (play != null && eventsSorted[0].timestamp < play.timestamp) {
@@ -47,6 +61,7 @@ class EventProcessor(
                 if (event.isPlaying) {
                     play = Scrobble.fromEvent(event)
                     updatingPlay = false
+                    pluggingPlay = false
                 }
                 return@forEach
             }
@@ -77,21 +92,27 @@ class EventProcessor(
                     val position = play.lastPosition + (event.timestamp - play.lastTimestamp) * play.lastSpeed
                     play.plug(event.timestamp, position, play.lastSpeed)
                 }
-                if (updatingPlay) {
+                if (pluggingPlay) {
+                    pluggedScrobbles.add(play)
+                } else if (updatingPlay) {
                     updatedScrobbles.add(play)
                 } else {
                     newScrobbles.add(play)
                 }
                 play = Scrobble.fromEvent(event)
                 updatingPlay = false
+                pluggingPlay = false
             } else {
                 play.associatedEvents.add(event.info)
+                pluggingPlay = false
             }
             logger.debug { "finished processing $event" }
         }
 
         if (play != null) {
-            if (updatingPlay) {
+            if (pluggingPlay) {
+                pluggedScrobbles.add(play)
+            } else if (updatingPlay) {
                 updatedScrobbles.add(play)
             } else {
                 newScrobbles.add(play)
@@ -111,4 +132,10 @@ class EventProcessor(
         } else {
             event.position <= SKIP_MIN_DURATION && lastScrobble.lastPosition > SKIP_MIN_DURATION
         }
+
+    data class Result(
+        val new: List<Scrobble>,
+        val updated: List<Scrobble>,
+        val plugged: List<Scrobble>,
+    )
 }

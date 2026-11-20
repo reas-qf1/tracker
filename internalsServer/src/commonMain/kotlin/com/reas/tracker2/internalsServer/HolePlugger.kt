@@ -1,15 +1,15 @@
-package com.reas.tracker2.shared
+package com.reas.tracker2.internalsServer
 
+import com.reas.tracker2.shared.Scrobble
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlin.time.Clock
 
 class HolePlugger(
-    private val holePluggerAdapter: HolePluggerAdapter,
+    private val repository: Repository,
 ) {
-    private val scope = holePluggerAdapter.getScope()
-    private val clock = holePluggerAdapter.getClock()
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val clock = Clock.System
     private val plugJobs = mutableMapOf<String, Job>()
 
     fun register(scrobble: Scrobble) {
@@ -28,7 +28,7 @@ class HolePlugger(
             plugJobs.remove(key) // so that no one can cancel us
             scrobble.timePlayed += scrobble.endTimestamp - scrobble.lastTimestamp
             scrobble.plug(scrobble.endTimestamp, scrobble.duration, scrobble.lastSpeed)
-            holePluggerAdapter.emitScrobble(scrobble)
+            repository.insertScrobble(scrobble)
         }
     }
 

@@ -5,7 +5,7 @@ import android.content.Context
 import android.text.Html
 import androidx.work.*
 import com.reas.tracker2.R
-import com.reas.tracker2.database.Repository
+import com.reas.tracker2.database.AppRepository
 import com.reas.tracker2.shared.TimePeriod
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.first
@@ -21,7 +21,7 @@ class DailyReportWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(context, params),
     KoinComponent {
-    private val repository: Repository by inject()
+    private val repository: AppRepository by inject()
     private val notif: NotificationWrapper by inject()
 
     override suspend fun doWork(): Result {

@@ -55,17 +55,19 @@ data class ScrobbleWithData(
         parentColumns = ["trackId"],
         entityColumns = ["trackId"],
     )
-    val metadata: TrackWithData,
+    val metadata: TrackWithData?,
 ) {
     fun toObject() =
         Scrobble(
             id = scrobble.id,
-            metadata = metadata.toObject().let { t ->
-                t.copy(
-                    artists = t.artists.copy(raw = scrobble.artists),
-                    albumObject = t.asAlbum?.copy(artists = t.albumArtists!!.copy(raw = scrobble.albumArtists!!)),
-                )
-            },
+            metadata = (metadata ?: throw IllegalStateException("track id not found $scrobble"))
+                .toObject()
+                .let { t ->
+                    t.copy(
+                        artists = t.artists.copy(raw = scrobble.artists),
+                        albumObject = t.asAlbum?.copy(artists = t.albumArtists!!.copy(raw = scrobble.albumArtists!!)),
+                    )
+                },
             isDeleted = scrobble.isDeleted,
             timestamp = scrobble.timestamp,
             duration = scrobble.duration,
@@ -83,7 +85,9 @@ data class EditWithMetadata(
         entityColumns = ["trackId"],
     )
     val metadata: TrackWithData,
-)
+) {
+    fun metadataToObject() = metadata.toObject()
+}
 
 data class ArtistWithPlayCount(
     @Embedded val artist: Artist,

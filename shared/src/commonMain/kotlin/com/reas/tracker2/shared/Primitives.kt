@@ -4,7 +4,6 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -47,10 +46,20 @@ data class ArtistList(
 }
 
 @Serializable
+data class RawArtistList(
+    val raw: String,
+    val list: List<String>? = null,
+)
+
+@Serializable
 data class Artist(
     val name: String,
     val id: Long,
 ) {
+    init {
+        require(id >= 0) { "artist id must be non-negative, but was $id" }
+    }
+
     override fun equals(other: Any?): Boolean = other is Artist && name == other.name
 
     override fun hashCode(): Int = name.hashCode()
@@ -62,6 +71,10 @@ data class Album(
     val artists: ArtistList,
     val id: Long,
 ) {
+    init {
+        require(id >= 0) { "album id must be non-negative, but was $id" }
+    }
+
     val artistsAsString: String
         get() = artists.raw
 
@@ -81,6 +94,10 @@ data class Track(
     val artists: ArtistList,
     val id: Long,
 ) {
+    init {
+        require(id >= 0) { "track id must be non-negative, but was $id" }
+    }
+
     val albumArtists: ArtistList?
         get() = albumObject?.artists
     val artistsAsString: String
@@ -118,9 +135,9 @@ data class Track(
 @Serializable
 data class RawMetadata(
     val track: String,
-    val artists: String,
+    val artists: RawArtistList,
     val album: String?,
-    val albumArtists: String?,
+    val albumArtists: RawArtistList?,
 )
 
 @Serializable
@@ -201,6 +218,23 @@ data class Event(
 }
 
 @Serializable
+data class RawEvent(
+    val metadata: RawMetadata,
+    val duration: Duration,
+    val info: EventInfo,
+    val source: Source,
+) {
+    val timestamp: Instant
+        get() = info.timestamp
+    val position: Duration
+        get() = info.position
+    val speed: Double
+        get() = info.speed
+    val isPlaying: Boolean
+        get() = info.state == EventState.PLAYING
+}
+
+@Serializable
 data class Source(
     val user: String,
     val client: String,
@@ -268,10 +302,6 @@ data class Scrobble(
 
     val isNowPlaying
         get() = lastPlaying && currentPosition <= duration
-    val isTiny
-        get() = timePlayed < EventProcessor.SKIP_MIN_DURATION
-    val isSkip
-        get() = timePlayed < duration / 2 && timePlayed < 4.minutes
 
     val key
         get() = "$client/$app/$timestamp"

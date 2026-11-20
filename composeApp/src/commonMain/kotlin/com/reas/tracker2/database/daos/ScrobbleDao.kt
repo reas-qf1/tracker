@@ -43,6 +43,7 @@ interface ScrobbleDao {
     @Query("UPDATE scrobbles SET isDeleted = 1 WHERE id = :id")
     suspend fun markScrobbleDeleted(id: Uuid)
 
+    @Transaction
     @Query("SELECT * FROM scrobbles WHERE lastPlaying = 1 AND isDeleted = 0")
     fun getNowPlaying(): Flow<List<ScrobbleWithData>>
 

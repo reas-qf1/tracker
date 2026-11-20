@@ -9,13 +9,14 @@ group = "com.reas.tracker2"
 version = "1.0.0"
 application {
     mainClass.set("com.reas.tracker2.ApplicationKt")
-    
+
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
 dependencies {
     implementation(projects.shared)
+    implementation(projects.internalsServer)
     implementation(libs.logback)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.auth)

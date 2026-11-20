@@ -1,6 +1,7 @@
 package com.reas.tracker2.api.v1
 
 import com.reas.tracker2.UserPrincipal
+import com.reas.tracker2.api.v1.routes.SubmitRequestV1
 import com.reas.tracker2.wrap
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -21,13 +22,13 @@ fun Route.apiV1() {
 
     post("/register") {
         wrap {
-            val (username, password) = call.receive<V1LoginInfo>()
+            val (username, password) = call.receive<LoginInfoV1>()
             api.register(username, password)
         }
     }
     post("/login") {
         wrap {
-            val (username, password) = call.receive<V1LoginInfo>()
+            val (username, password) = call.receive<LoginInfoV1>()
             api.login(username, password)
         }
     }
@@ -99,10 +100,11 @@ fun Route.apiV1() {
     }
 
     authenticate("api-token") {
-        get("/test") {
+        post("/submit") {
             wrap {
                 val principal = call.principal<UserPrincipal>()!!
-                api.test(principal)
+                val events = call.receive<SubmitRequestV1>()
+                api.submit(events.events, principal.username, principal.clientName)
             }
         }
     }

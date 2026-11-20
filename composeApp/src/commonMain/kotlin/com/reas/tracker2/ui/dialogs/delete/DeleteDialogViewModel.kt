@@ -1,7 +1,7 @@
 package com.reas.tracker2.ui.dialogs.delete
 
 import androidx.lifecycle.viewModelScope
-import com.reas.tracker2.database.Repository
+import com.reas.tracker2.database.AppRepository
 import com.reas.tracker2.shared.Scrobble
 import com.reas.tracker2.shared.ScrobbleEdit
 import com.reas.tracker2.ui.TrackerViewModel
@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 
 class DeleteDialogViewModel(
     private val nowPlayingNotificationManager: NowPlayingNotificationManager,
-    private val repository: Repository,
+    private val repository: AppRepository,
 ) : TrackerViewModel() {
     fun delete(scrobble: Scrobble) {
         viewModelScope.launch {

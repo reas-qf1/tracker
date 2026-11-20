@@ -1,12 +1,12 @@
 package com.reas.tracker2.ui.screens.debug
 
-import com.reas.tracker2.database.Repository
+import com.reas.tracker2.database.AppRepository
 import com.reas.tracker2.ui.TrackerViewModel
 import com.reas.tracker2.util.InMemoryLog
 import kotlinx.coroutines.flow.runningFold
 
 class DebugScreenViewModel(
-    private val repository: Repository,
+    private val repository: AppRepository,
     private val inMemoryLog: InMemoryLog,
 ) : TrackerViewModel() {
     val playCount

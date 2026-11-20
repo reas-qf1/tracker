@@ -1,7 +1,7 @@
 package com.reas.tracker2.ui.screens.charts
 
 import androidx.paging.PagingData
-import com.reas.tracker2.database.Repository
+import com.reas.tracker2.database.AppRepository
 import com.reas.tracker2.network.NetworkRepository
 import com.reas.tracker2.settings.Settings
 import com.reas.tracker2.settings.chartSort
@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import org.koin.core.time.inMs
 
 class ChartsScreenViewModel(
-    private val repository: Repository,
+    private val repository: AppRepository,
     private val networkRepository: NetworkRepository,
     private val settings: Settings,
 ) : TrackerViewModel() {

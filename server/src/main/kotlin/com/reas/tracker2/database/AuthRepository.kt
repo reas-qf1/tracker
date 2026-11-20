@@ -1,7 +1,6 @@
 package com.reas.tracker2.database
 
 import at.favre.lib.crypto.bcrypt.BCrypt
-import com.reas.tracker2.database.TokenTable.client
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
@@ -23,66 +22,35 @@ data class Token(
 )
 
 interface AuthRepository {
-    fun addUser(
-        username: String,
-        password: String,
-    )
+    fun addUser(username: String, password: String)
 
-    fun validate(
-        username: String,
-        password: String,
-    ): Boolean
+    fun validate(username: String, password: String): Boolean
 
     fun userExists(username: String): Boolean
 
     fun deleteUser(username: String)
 
-    fun addClient(
-        username: String,
-        clientName: String,
-    )
+    fun addClient(username: String, clientName: String)
 
     fun getClients(username: String): List<String>
 
-    fun clientExists(
-        username: String,
-        clientName: String,
-    ): Boolean
+    fun clientExists(username: String, clientName: String): Boolean
 
-    fun deleteClient(
-        username: String,
-        clientName: String,
-    )
+    fun deleteClient(username: String, clientName: String)
 
     fun deleteAllClients(username: String)
 
-    fun addToken(
-        username: String,
-        clientName: String,
-        expiresAt: Instant,
-    ): String
+    fun addToken(username: String, clientName: String, expiresAt: Instant): String
 
-    fun getTokens(
-        username: String,
-        clientName: String,
-    ): List<Token>
+    fun getTokens(username: String, clientName: String): List<Token>
 
     fun validateToken(token: String): Pair<String, String>
 
-    fun deleteToken(
-        username: String,
-        token: String,
-    )
+    fun deleteToken(username: String, token: String)
 
-    fun deleteTokenByHash(
-        username: String,
-        tokenHash: ByteArray,
-    )
+    fun deleteTokenByHash(username: String, tokenHash: ByteArray)
 
-    fun deleteAllTokens(
-        username: String,
-        clientName: String,
-    )
+    fun deleteAllTokens(username: String, clientName: String)
 
     fun deleteAllTokens(username: String)
 
@@ -101,7 +69,7 @@ interface AuthRepository {
     class ClientNotFoundException(
         val clientName: String,
     ) : RuntimeException() {
-        override val message: String = "Client $client not found"
+        override val message: String = "Client $clientName not found"
     }
 
     class TokenValidationException : RuntimeException() {
@@ -116,10 +84,7 @@ class DatabaseAuthRepository(
     private val verifier = BCrypt.verifyer()
     private val random = SecureRandom()
 
-    override fun addUser(
-        username: String,
-        password: String,
-    ) {
+    override fun addUser(username: String, password: String) {
         try {
             transaction(db) {
                 val passwordHash = bcrypt.hashToString(12, password.toCharArray())
@@ -133,10 +98,7 @@ class DatabaseAuthRepository(
         }
     }
 
-    override fun validate(
-        username: String,
-        password: String,
-    ): Boolean =
+    override fun validate(username: String, password: String): Boolean =
         transaction(db) {
             val passwordHash =
                 UserTable
@@ -161,10 +123,7 @@ class DatabaseAuthRepository(
         }
     }
 
-    override fun addClient(
-        username: String,
-        clientName: String,
-    ) {
+    override fun addClient(username: String, clientName: String) {
         transaction(db) {
             val userId = userId(username)
             ClientTable.insert {
@@ -183,10 +142,7 @@ class DatabaseAuthRepository(
                 .map { it[ClientTable.name] }
         }
 
-    override fun clientExists(
-        username: String,
-        clientName: String,
-    ): Boolean =
+    override fun clientExists(username: String, clientName: String): Boolean =
         transaction(db) {
             val userId = userId(username)
             ClientTable
@@ -196,10 +152,7 @@ class DatabaseAuthRepository(
                 }.singleOrNull() != null
         }
 
-    override fun deleteClient(
-        username: String,
-        clientName: String,
-    ) {
+    override fun deleteClient(username: String, clientName: String) {
         transaction(db) {
             val userId = userId(username)
             val clientId = clientId(userId, clientName)
@@ -220,11 +173,7 @@ class DatabaseAuthRepository(
         }
     }
 
-    override fun addToken(
-        username: String,
-        clientName: String,
-        expiresAt: Instant,
-    ): String =
+    override fun addToken(username: String, clientName: String, expiresAt: Instant): String =
         transaction(db) {
             val userId = userId(username)
             val clientId = clientId(userId, clientName)
@@ -278,10 +227,7 @@ class DatabaseAuthRepository(
             return@transaction username to clientName
         }
 
-    override fun getTokens(
-        username: String,
-        clientName: String,
-    ): List<Token> =
+    override fun getTokens(username: String, clientName: String): List<Token> =
         transaction(db) {
             val userId = userId(username)
             val clientId = clientId(userId, clientName)
@@ -299,17 +245,11 @@ class DatabaseAuthRepository(
                 }
         }
 
-    override fun deleteToken(
-        username: String,
-        token: String,
-    ) {
+    override fun deleteToken(username: String, token: String) {
         deleteTokenByHash(username, tokenHash(token))
     }
 
-    override fun deleteTokenByHash(
-        username: String,
-        tokenHash: ByteArray,
-    ) {
+    override fun deleteTokenByHash(username: String, tokenHash: ByteArray) {
         transaction(db) {
             val userId = userId(username)
             TokenTable.deleteWhere {
@@ -318,10 +258,7 @@ class DatabaseAuthRepository(
         }
     }
 
-    override fun deleteAllTokens(
-        username: String,
-        clientName: String,
-    ) {
+    override fun deleteAllTokens(username: String, clientName: String) {
         transaction(db) {
             val userId = userId(username)
             val clientId = clientId(userId, clientName)
@@ -345,10 +282,7 @@ class DatabaseAuthRepository(
             .singleOrNull()
             ?.get(UserTable.id) ?: throw AuthRepository.UserNotFoundException(username)
 
-    private fun clientId(
-        userId: EntityID<UUID>,
-        clientName: String,
-    ): EntityID<UUID> =
+    private fun clientId(userId: EntityID<UUID>, clientName: String): EntityID<UUID> =
         ClientTable
             .select(ClientTable.id)
             .where { ClientTable.user eq userId }
