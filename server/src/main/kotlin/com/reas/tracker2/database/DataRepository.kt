@@ -2,9 +2,6 @@ package com.reas.tracker2.database
 
 import com.reas.tracker2.internalsServer.Repository
 import com.reas.tracker2.shared.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -12,18 +9,14 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
-import java.util.*
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.Instant
 import kotlin.uuid.Uuid
-import kotlin.uuid.toJavaUuid
-import kotlin.uuid.toKotlinUuid
 
 class DataRepository(
     private val db: Database,
 ) : Repository {
-    override suspend fun <T> readTransaction(block: suspend () -> T): T = suspendTransaction(db/*, readOnly = true*/) { block() }
+    override suspend fun <T> readTransaction(block: suspend () -> T): T =
+        @Suppress("ktlint:standard:comment-wrapping")
+        suspendTransaction(db/*, readOnly = true*/) { block() }
 
     override suspend fun <T> writeTransaction(block: suspend () -> T): T = suspendTransaction(db, readOnly = false) { block() }
 
@@ -124,7 +117,7 @@ class DataRepository(
         readTransaction {
             val scrobble = ScrobbleTable
                 .selectAll()
-                .where { ScrobbleTable.id eq id.toJavaUuid() }
+                .where { ScrobbleTable.id eq id }
                 .singleOrNull()
             scrobble?.let { resultRowToScrobble(it) }
         }
@@ -141,20 +134,20 @@ class DataRepository(
                 .andWhere { ClientTable.name eq scrobble.source.client }
                 .single()[ClientTable.id]
             ScrobbleTable.upsert {
-                it[ScrobbleTable.id] = scrobble.id.toJavaUuid()
+                it[ScrobbleTable.id] = scrobble.id
                 it[ScrobbleTable.trackId] = scrobble.metadata.id
                 it[ScrobbleTable.isDeleted] = scrobble.isDeleted
                 it[ScrobbleTable.artists] = scrobble.artistsAsString
                 it[ScrobbleTable.albumArtists] = scrobble.albumArtistsAsString
-                it[ScrobbleTable.timestamp] = scrobble.timestamp.toEpochMilliseconds()
-                it[ScrobbleTable.duration] = scrobble.duration.inWholeMilliseconds
-                it[ScrobbleTable.timePlayed] = scrobble.timePlayed.inWholeMilliseconds
-                it[ScrobbleTable.lastPosition] = scrobble.lastPosition.inWholeMilliseconds
+                it[ScrobbleTable.timestamp] = scrobble.timestamp
+                it[ScrobbleTable.duration] = scrobble.duration
+                it[ScrobbleTable.timePlayed] = scrobble.timePlayed
+                it[ScrobbleTable.lastPosition] = scrobble.lastPosition
                 it[ScrobbleTable.lastPlaying] = scrobble.lastPlaying
                 it[ScrobbleTable.user] = userId
                 it[ScrobbleTable.client] = clientId
                 it[ScrobbleTable.app] = scrobble.app
-                it[ScrobbleTable.associatedEvents] = Json.encodeToString(scrobble.associatedEvents)
+                it[ScrobbleTable.associatedEvents] = scrobble.associatedEvents
             }
         }
     }
@@ -171,20 +164,20 @@ class DataRepository(
                     .where { ClientTable.user eq userId }
                     .andWhere { ClientTable.name eq scrobble.source.client }
                     .single()[ClientTable.id]
-                this[ScrobbleTable.id] = scrobble.id.toJavaUuid()
+                this[ScrobbleTable.id] = scrobble.id
                 this[ScrobbleTable.trackId] = scrobble.metadata.id
                 this[ScrobbleTable.isDeleted] = scrobble.isDeleted
                 this[ScrobbleTable.artists] = scrobble.artistsAsString
                 this[ScrobbleTable.albumArtists] = scrobble.albumArtistsAsString
-                this[ScrobbleTable.timestamp] = scrobble.timestamp.toEpochMilliseconds()
-                this[ScrobbleTable.duration] = scrobble.duration.inWholeMilliseconds
-                this[ScrobbleTable.timePlayed] = scrobble.timePlayed.inWholeMilliseconds
-                this[ScrobbleTable.lastPosition] = scrobble.lastPosition.inWholeMilliseconds
+                this[ScrobbleTable.timestamp] = scrobble.timestamp
+                this[ScrobbleTable.duration] = scrobble.duration
+                this[ScrobbleTable.timePlayed] = scrobble.timePlayed
+                this[ScrobbleTable.lastPosition] = scrobble.lastPosition
                 this[ScrobbleTable.lastPlaying] = scrobble.lastPlaying
                 this[ScrobbleTable.user] = userId
                 this[ScrobbleTable.client] = clientId
                 this[ScrobbleTable.app] = scrobble.app
-                this[ScrobbleTable.associatedEvents] = Json.encodeToString(scrobble.associatedEvents)
+                this[ScrobbleTable.associatedEvents] = scrobble.associatedEvents
             }
         }
     }
@@ -192,32 +185,23 @@ class DataRepository(
     override suspend fun updateScrobbleEvents(scrobbles: List<Scrobble>) {
         writeTransaction {
             for (scrobble in scrobbles) {
-                ScrobbleTable.update {
-                    it[ScrobbleTable.id] = scrobble.id.toJavaUuid()
-                    it[ScrobbleTable.timePlayed] = scrobble.timePlayed.inWholeMilliseconds
-                    it[ScrobbleTable.lastPosition] = scrobble.lastPosition.inWholeMilliseconds
+                ScrobbleTable.update({ ScrobbleTable.id eq scrobble.id }) {
+                    it[ScrobbleTable.timePlayed] = scrobble.timePlayed
+                    it[ScrobbleTable.lastPosition] = scrobble.lastPosition
                     it[ScrobbleTable.lastPlaying] = scrobble.lastPlaying
-                    it[ScrobbleTable.associatedEvents] = Json.encodeToString(scrobble.associatedEvents)
+                    it[ScrobbleTable.associatedEvents] = scrobble.associatedEvents
                 }
             }
         }
     }
 
-    // TODO: actual reactivity
-    override fun getNowPlaying(): Flow<List<Scrobble>> =
-        channelFlow {
-            while (true) {
-                readTransaction {
-                    channel.send(
-                        ScrobbleTable
-                            .selectAll()
-                            .where { ScrobbleTable.lastPlaying eq true }
-                            .andWhere { ScrobbleTable.isDeleted eq false }
-                            .map { resultRowToScrobble(it) },
-                    )
-                }
-                delay(1.seconds)
-            }
+    override suspend fun getNowPlaying(): List<Scrobble> =
+        writeTransaction {
+            ScrobbleTable
+                .selectAll()
+                .where { ScrobbleTable.lastPlaying eq true }
+                .andWhere { ScrobbleTable.isDeleted eq false }
+                .map { resultRowToScrobble(it) }
         }
 
     override suspend fun getLastScrobbleFromSource(source: Source): Scrobble? =
@@ -237,12 +221,25 @@ class DataRepository(
     override suspend fun insertEdit(edit: ScrobbleEdit) {
         writeTransaction {
             EditTable.insert {
-                it[EditTable.id] = edit.id.toJavaUuid()
+                it[EditTable.id] = edit.id
                 it[EditTable.trackId] = edit.track.id
-                it[EditTable.scrobbleId] = edit.scrobbleId.toJavaUuid()
+                it[EditTable.scrobbleId] = edit.scrobbleId
                 it[EditTable.isDeleted] = edit.isDeleted
-                it[EditTable.timestamp] = edit.timestamp.toEpochMilliseconds()
+                it[EditTable.timestamp] = edit.timestamp
                 it[EditTable.reason] = Json.encodeToString(edit.reason)
+            }
+        }
+    }
+
+    override suspend fun insertEdits(edits: List<ScrobbleEdit>) {
+        writeTransaction {
+            EditTable.batchInsert(edits) { edit ->
+                this[EditTable.id] = edit.id
+                this[EditTable.trackId] = edit.track.id
+                this[EditTable.scrobbleId] = edit.scrobbleId
+                this[EditTable.isDeleted] = edit.isDeleted
+                this[EditTable.timestamp] = edit.timestamp
+                this[EditTable.reason] = Json.encodeToString(edit.reason)
             }
         }
     }
@@ -251,7 +248,7 @@ class DataRepository(
         readTransaction {
             EditTable
                 .select(EditTable.trackId)
-                .where { EditTable.scrobbleId eq scrobble.id.toJavaUuid() }
+                .where { EditTable.scrobbleId eq scrobble.id }
                 .singleOrNull()
                 ?.let {
                     getTrackById(it[EditTable.trackId].value)
@@ -265,7 +262,7 @@ class DataRepository(
             .single()[UserTable.id]
             .value
 
-    private fun getClientIdByName(user: String, client: String): Pair<UUID, UUID> {
+    private fun getClientIdByName(user: String, client: String): Pair<Uuid, Uuid> {
         val userId = getUserIdByName(user)
         val clientId = ClientTable
             .select(ClientTable.id)
@@ -276,13 +273,13 @@ class DataRepository(
         return userId to clientId
     }
 
-    private fun getUserNameById(id: UUID) =
+    private fun getUserNameById(id: Uuid) =
         UserTable
             .select(UserTable.name)
             .where { UserTable.id eq id }
             .single()[UserTable.name]
 
-    private fun getClientNameById(user: UUID, client: UUID): Pair<String, String> {
+    private fun getClientNameById(user: Uuid, client: Uuid): Pair<String, String> {
         val userId = getUserNameById(user)
         val clientId = ClientTable
             .select(ClientTable.name)
@@ -329,7 +326,7 @@ class DataRepository(
     private fun resultRowToScrobble(row: ResultRow): Scrobble {
         val (user, client) = getClientNameById(row[ScrobbleTable.user].value, row[ScrobbleTable.client].value)
         return Scrobble(
-            id = row[ScrobbleTable.id].value.toKotlinUuid(),
+            id = row[ScrobbleTable.id].value,
             metadata = getTrackById(row[ScrobbleTable.trackId].value).let { t ->
                 t.copy(
                     artists = t.artists.copy(raw = row[ScrobbleTable.artists]),
@@ -337,11 +334,11 @@ class DataRepository(
                 )
             },
             isDeleted = row[ScrobbleTable.isDeleted],
-            duration = row[ScrobbleTable.duration].milliseconds,
-            timePlayed = row[ScrobbleTable.timePlayed].milliseconds,
-            timestamp = Instant.fromEpochMilliseconds(row[ScrobbleTable.timestamp]),
+            duration = row[ScrobbleTable.duration],
+            timePlayed = row[ScrobbleTable.timePlayed],
+            timestamp = row[ScrobbleTable.timestamp],
             source = Source(user, client, row[ScrobbleTable.app]),
-            associatedEvents = Json.decodeFromString(row[ScrobbleTable.associatedEvents]),
+            associatedEvents = row[ScrobbleTable.associatedEvents].toMutableList(),
         )
     }
 }

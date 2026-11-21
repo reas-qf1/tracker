@@ -7,7 +7,6 @@ import com.reas.tracker2.database.entities.*
 import com.reas.tracker2.internalsServer.Repository
 import com.reas.tracker2.shared.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
@@ -114,7 +113,7 @@ class AppRepository(
 
     suspend fun markScrobbleDeleted(scrobble: Scrobble) = db.scrobbleDao().markScrobbleDeleted(scrobble.id)
 
-    override fun getNowPlaying(): Flow<List<Scrobble>> = db.scrobbleDao().getNowPlaying().map { it.map { it.toObject() } }
+    override suspend fun getNowPlaying(): List<Scrobble> = db.scrobbleDao().getNowPlaying().map { it.toObject() }
 
     fun getRecentScrobbles(): PagingSource<Int, ScrobbleWithData> = db.scrobbleDao().getRecentScrobbles()
 
@@ -216,9 +215,9 @@ class AppRepository(
     fun getTrackRankByPlayCount(track: Track, period: TimePeriod): Flow<Int> =
         db.scrobbleDao().getTrackRankByPlayCount(track.id, period.start, period.end)
 
-    override suspend fun insertEdit(edit: ScrobbleEdit) {
-        db.editDao().insert(edit.toEntity())
-    }
+    override suspend fun insertEdit(edit: ScrobbleEdit) = db.editDao().insert(edit.toEntity())
+
+    override suspend fun insertEdits(edits: List<ScrobbleEdit>) = db.editDao().insert(edits.map { it.toEntity() })
 
     suspend fun updateEdit(edit: ScrobbleEdit) = db.editDao().update(edit.toEntity())
 

@@ -9,10 +9,10 @@ import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.security.MessageDigest
 import java.security.SecureRandom
-import java.util.*
 import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 import kotlin.time.Instant
+import kotlin.uuid.Uuid
 
 data class Token(
     val prefix: String,
@@ -188,8 +188,8 @@ class DatabaseAuthRepository(
                 it[TokenTable.client] = clientId
                 it[TokenTable.tokenPrefix] = token.take(8)
                 it[TokenTable.tokenHash] = tokenHash
-                it[TokenTable.createdAt] = Clock.System.now().toEpochMilliseconds()
-                it[TokenTable.expiresAt] = expiresAt.toEpochMilliseconds()
+                it[TokenTable.createdAt] = Clock.System.now()
+                it[TokenTable.expiresAt] = expiresAt
             }
             return@transaction token
         }
@@ -203,7 +203,7 @@ class DatabaseAuthRepository(
                     .where { TokenTable.tokenHash eq tokenHash }
                     .singleOrNull() ?: throw AuthRepository.TokenValidationException()
 
-            val expiresAt = Instant.fromEpochMilliseconds(tokenObj[TokenTable.expiresAt])
+            val expiresAt = tokenObj[TokenTable.expiresAt]
             if (Clock.System.now() > expiresAt) {
                 throw AuthRepository.TokenValidationException()
             }
@@ -239,8 +239,8 @@ class DatabaseAuthRepository(
                     Token(
                         it[TokenTable.tokenPrefix],
                         it[TokenTable.tokenHash],
-                        Instant.fromEpochMilliseconds(it[TokenTable.createdAt]),
-                        Instant.fromEpochMilliseconds(it[TokenTable.expiresAt]),
+                        it[TokenTable.createdAt],
+                        it[TokenTable.expiresAt],
                     )
                 }
         }
@@ -275,14 +275,14 @@ class DatabaseAuthRepository(
         }
     }
 
-    private fun userId(username: String): EntityID<UUID> =
+    private fun userId(username: String): EntityID<Uuid> =
         UserTable
             .select(UserTable.id)
             .where { UserTable.name eq username }
             .singleOrNull()
             ?.get(UserTable.id) ?: throw AuthRepository.UserNotFoundException(username)
 
-    private fun clientId(userId: EntityID<UUID>, clientName: String): EntityID<UUID> =
+    private fun clientId(userId: EntityID<Uuid>, clientName: String): EntityID<Uuid> =
         ClientTable
             .select(ClientTable.id)
             .where { ClientTable.user eq userId }

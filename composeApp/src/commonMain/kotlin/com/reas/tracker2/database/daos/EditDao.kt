@@ -10,13 +10,16 @@ import kotlin.uuid.Uuid
 @Dao
 interface EditDao {
     @Insert(onConflict = REPLACE)
-    suspend fun insert(play: EditEntity): Long
+    suspend fun insert(edit: EditEntity)
+
+    @Insert(onConflict = REPLACE)
+    suspend fun insert(edits: List<EditEntity>)
 
     @Update
-    suspend fun update(play: EditEntity)
+    suspend fun update(edit: EditEntity)
 
     @Delete
-    suspend fun delete(play: EditEntity)
+    suspend fun delete(edit: EditEntity)
 
     @Query("SELECT * FROM edits WHERE scrobbleId = :scrobbleId ORDER BY timestamp ASC LIMIT 1")
     suspend fun getFirstEdit(scrobbleId: Uuid): EditWithMetadata?

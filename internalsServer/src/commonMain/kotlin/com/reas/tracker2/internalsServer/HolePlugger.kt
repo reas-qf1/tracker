@@ -14,6 +14,7 @@ class HolePlugger(
 
     fun register(scrobble: Scrobble) {
         if (!scrobble.lastPlaying) {
+            cancel(scrobble)
             return
         }
         val key = scrobble.key
@@ -28,7 +29,7 @@ class HolePlugger(
             plugJobs.remove(key) // so that no one can cancel us
             scrobble.timePlayed += scrobble.endTimestamp - scrobble.lastTimestamp
             scrobble.plug(scrobble.endTimestamp, scrobble.duration, scrobble.lastSpeed)
-            repository.insertScrobble(scrobble)
+            repository.updateScrobbleEvents(listOf(scrobble))
         }
     }
 

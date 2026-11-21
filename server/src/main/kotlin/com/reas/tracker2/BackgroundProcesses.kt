@@ -9,6 +9,6 @@ fun Application.backgroundProcesses() {
     val server: LocalServer by inject()
 
     launch {
-        server.holePluggerLoop()
+        server.startup()
     }
 }

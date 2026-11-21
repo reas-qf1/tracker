@@ -9,8 +9,7 @@ import org.koin.compose.koinInject
 fun TrackerBackgroundProcesses(onError: suspend (String) -> Unit) {
     val server: LocalServer = koinInject()
 
-    // plugging holes
     LaunchedEffect(Unit) {
-        server.holePluggerLoop()
+        server.startup()
     }
 }

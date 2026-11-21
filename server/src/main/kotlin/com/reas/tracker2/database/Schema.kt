@@ -2,27 +2,27 @@ package com.reas.tracker2.database
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 
-object UserTable : UUIDTable("users") {
+object UserTable : UuidTable("users") {
     val name = text("name").uniqueIndex()
     val passwordHash = text("password_hash")
 }
 
-object ClientTable : UUIDTable("clients") {
+object ClientTable : UuidTable("clients") {
     val user = reference("user", UserTable.id)
     val name = text("name").index()
 
     val index = uniqueIndex(user, name)
 }
 
-object TokenTable : UUIDTable("tokens") {
+object TokenTable : UuidTable("tokens") {
     val user = reference("user", UserTable.id)
     val client = reference("client", ClientTable.id)
     val tokenPrefix = varchar("token_prefix", 8)
     val tokenHash = binary("token_hash", 32)
-    val createdAt = long("created_at")
-    val expiresAt = long("expires_at")
+    val createdAt = long("created_at").transform(InstantTransformer())
+    val expiresAt = long("expires_at").transform(InstantTransformer())
 }
 
 object ArtistTable : LongIdTable("artists") {
@@ -62,30 +62,30 @@ object TrackArtistCrossRefTable : Table("track_artists") {
     val index2 = uniqueIndex(artistId, trackId)
 }
 
-object ScrobbleTable : UUIDTable("scrobbles") {
+object ScrobbleTable : UuidTable("scrobbles") {
     val user = reference("user", UserTable.id)
     val client = reference("client", ClientTable.id)
     val trackId = reference("track_id", TrackTable.id).index()
     val isDeleted = bool("is_deleted")
     val artists = text("artists")
     val albumArtists = text("album_artists").nullable()
-    val timestamp = long("timestamp").index()
-    val duration = long("duration")
-    val timePlayed = long("time_played")
-    val lastPosition = long("last_position")
+    val timestamp = long("timestamp").transform(InstantTransformer()).index()
+    val duration = long("duration").transform(DurationTransformer())
+    val timePlayed = long("time_played").transform(DurationTransformer())
+    val lastPosition = long("last_position").transform(DurationTransformer())
     val lastPlaying = bool("last_playing")
     val app = text("app")
-    val associatedEvents = text("associated_events")
+    val associatedEvents = text("associated_events").transform(EventInfoListTransformer())
     val other = text("other").nullable()
 
     val sourceIndex = index(isUnique = false, user, client, app)
 }
 
-object EditTable : UUIDTable("edits") {
+object EditTable : UuidTable("edits") {
     val scrobbleId = reference("scrobble_id", ScrobbleTable.id)
     val trackId = reference("track_id", TrackTable.id)
     val isDeleted = bool("is_deleted")
-    val timestamp = long("timestamp")
+    val timestamp = long("timestamp").transform(InstantTransformer())
     val reason = text("reason")
 
     val index = index(isUnique = false, scrobbleId, trackId)

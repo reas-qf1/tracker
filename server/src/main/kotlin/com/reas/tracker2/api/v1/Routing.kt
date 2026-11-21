@@ -104,7 +104,7 @@ fun Route.apiV1() {
             wrap {
                 val principal = call.principal<UserPrincipal>()!!
                 val events = call.receive<SubmitRequestV1>()
-                api.submit(events.events, principal.username, principal.clientName)
+                api.submit(events.events, principal)
             }
         }
     }

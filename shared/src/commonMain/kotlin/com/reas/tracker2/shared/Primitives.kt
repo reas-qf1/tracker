@@ -3,7 +3,6 @@ package com.reas.tracker2.shared
 import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -193,28 +192,6 @@ data class Event(
         get() = info.state
     val speed: Double
         get() = info.speed
-
-    companion object {
-        fun create(
-            track: Track,
-            duration: Long,
-            timestamp: Long,
-            position: Long,
-            state: EventState,
-            speed: Double,
-            source: Source,
-        ) = Event(
-            metadata = track,
-            duration = duration.milliseconds,
-            info = EventInfo(
-                timestamp = Instant.fromEpochMilliseconds(timestamp),
-                position = position.milliseconds,
-                state = state,
-                speed = speed,
-            ),
-            source = source,
-        )
-    }
 }
 
 @Serializable
@@ -304,7 +281,7 @@ data class Scrobble(
         get() = lastPlaying && currentPosition <= duration
 
     val key
-        get() = "$client/$app/$timestamp"
+        get() = "$id"
 
     fun plug(timestamp: Instant, position: Duration, speed: Double) {
         associatedEvents.add(

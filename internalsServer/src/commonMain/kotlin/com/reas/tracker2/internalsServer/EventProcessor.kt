@@ -42,8 +42,7 @@ class EventProcessor(
         events: List<Event>,
     ) {
         var play = getLastScrobbleFromSource(source)
-        var updatingPlay = true
-        var pluggingPlay = true
+        var state = State.UNCHANGED
 
         val eventsSorted = events.sortedBy { it.timestamp }
         if (play != null && eventsSorted[0].timestamp < play.timestamp) {
@@ -60,8 +59,7 @@ class EventProcessor(
                 logger.debug { "play == null" }
                 if (event.isPlaying) {
                     play = Scrobble.fromEvent(event)
-                    updatingPlay = false
-                    pluggingPlay = false
+                    state = State.NEW
                 }
                 return@forEach
             }
@@ -69,14 +67,15 @@ class EventProcessor(
             // if past the end of previous play, plug hole
             val shouldPlugHole = event.timestamp > play.endTimestamp
             if (play.lastPlaying && shouldPlugHole) {
-                play.timePlayed += play.endTimestamp - play.timestamp
+                play.timePlayed += play.endTimestamp - play.lastTimestamp
                 play.plug(play.endTimestamp, play.duration, play.lastSpeed)
+                if (state < State.PLUGGING) state = State.PLUGGING
             }
 
             // if hole is plugged and needs to be unplugged, unplug
             if (play.isPlugged && !shouldPlugHole) {
                 play.associatedEvents.removeAt(play.associatedEvents.size - 1)
-                play.timePlayed -= play.endTimestamp - play.timestamp
+                play.timePlayed -= play.endTimestamp - play.lastTimestamp
             }
 
             // add time passed
@@ -91,30 +90,30 @@ class EventProcessor(
                 if (play.lastPlaying) {
                     val position = play.lastPosition + (event.timestamp - play.lastTimestamp) * play.lastSpeed
                     play.plug(event.timestamp, position, play.lastSpeed)
+                    if (state < State.PLUGGING) state = State.PLUGGING
                 }
-                if (pluggingPlay) {
+                if (state == State.PLUGGING) {
                     pluggedScrobbles.add(play)
-                } else if (updatingPlay) {
+                } else if (state == State.UPDATING) {
                     updatedScrobbles.add(play)
-                } else {
+                } else if (state == State.NEW) {
                     newScrobbles.add(play)
                 }
                 play = Scrobble.fromEvent(event)
-                updatingPlay = false
-                pluggingPlay = false
+                state = State.NEW
             } else {
                 play.associatedEvents.add(event.info)
-                pluggingPlay = false
+                if (state < State.UPDATING) state = State.UPDATING
             }
             logger.debug { "finished processing $event" }
         }
 
         if (play != null) {
-            if (pluggingPlay) {
+            if (state == State.PLUGGING) {
                 pluggedScrobbles.add(play)
-            } else if (updatingPlay) {
+            } else if (state == State.UPDATING) {
                 updatedScrobbles.add(play)
-            } else {
+            } else if (state == State.NEW) {
                 newScrobbles.add(play)
             }
         }
@@ -138,4 +137,11 @@ class EventProcessor(
         val updated: List<Scrobble>,
         val plugged: List<Scrobble>,
     )
+
+    private enum class State {
+        UNCHANGED,
+        PLUGGING,
+        UPDATING,
+        NEW,
+    }
 }

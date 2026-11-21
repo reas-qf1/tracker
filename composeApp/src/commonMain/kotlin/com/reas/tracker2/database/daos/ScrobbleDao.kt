@@ -45,7 +45,7 @@ interface ScrobbleDao {
 
     @Transaction
     @Query("SELECT * FROM scrobbles WHERE lastPlaying = 1 AND isDeleted = 0")
-    fun getNowPlaying(): Flow<List<ScrobbleWithData>>
+    suspend fun getNowPlaying(): List<ScrobbleWithData>
 
     @Transaction
     @RewriteQueriesToDropUnusedColumns

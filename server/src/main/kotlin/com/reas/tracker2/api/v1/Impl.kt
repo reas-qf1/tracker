@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.reas.tracker2.Conflict
 import com.reas.tracker2.Unauthorized
+import com.reas.tracker2.UserPrincipal
 import com.reas.tracker2.api.v1.primitives.EventV1
 import com.reas.tracker2.database.AuthRepository
 import com.reas.tracker2.internalsServer.LocalServer
@@ -83,6 +84,6 @@ class ApiV1Impl : KoinComponent {
         authRepository.deleteTokenByHash(username, hash)
     }
 
-    suspend fun submit(events: List<EventV1>, username: String, clientName: String): List<Scrobble> =
-        server.submit(events.map { it.toEvent(username, clientName) })
+    suspend fun submit(events: List<EventV1>, user: UserPrincipal): List<Scrobble> =
+        server.submit(events.map { it.toEvent(user.username, user.clientName) })
 }

@@ -1,7 +1,6 @@
 package com.reas.tracker2.internalsServer
 
 import com.reas.tracker2.shared.*
-import kotlinx.coroutines.flow.Flow
 import kotlin.uuid.Uuid
 
 interface Repository {
@@ -36,12 +35,14 @@ interface Repository {
 
     suspend fun updateScrobbleEvents(scrobbles: List<Scrobble>)
 
-    fun getNowPlaying(): Flow<List<Scrobble>>
+    suspend fun getNowPlaying(): List<Scrobble>
 
     suspend fun getLastScrobbleFromSource(source: Source): Scrobble?
 
     // edits
     suspend fun insertEdit(edit: ScrobbleEdit)
+
+    suspend fun insertEdits(edits: List<ScrobbleEdit>)
 
     suspend fun getOriginalMetadata(scrobble: Scrobble): Track?
 }
