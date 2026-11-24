@@ -21,6 +21,7 @@ interface EditDao {
     @Delete
     suspend fun delete(edit: EditEntity)
 
+    @Transaction
     @Query("SELECT * FROM edits WHERE scrobbleId = :scrobbleId ORDER BY timestamp ASC LIMIT 1")
     suspend fun getFirstEdit(scrobbleId: Uuid): EditWithMetadata?
 

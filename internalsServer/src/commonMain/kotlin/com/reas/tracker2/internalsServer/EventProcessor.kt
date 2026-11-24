@@ -10,7 +10,7 @@ class EventProcessor(
     private val repository: Repository,
 ) {
     companion object {
-        val SKIP_MIN_DURATION = 2.seconds
+        val START_GRACE_PERIOD = 2.seconds
         private val logger = KotlinLogging.logger {}
     }
 
@@ -120,15 +120,15 @@ class EventProcessor(
 
     private fun isNewPlay(event: Event, lastScrobble: Scrobble): Boolean =
         if (event.isPlaying) {
-            if (event.position <= SKIP_MIN_DURATION) {
+            if (event.position <= START_GRACE_PERIOD) {
                 event.metadata != lastScrobble.metadata ||
-                    lastScrobble.lastPosition > SKIP_MIN_DURATION ||
-                    (event.timestamp - lastScrobble.lastTimestamp) > SKIP_MIN_DURATION
+                    lastScrobble.lastPosition > START_GRACE_PERIOD ||
+                    (event.timestamp - lastScrobble.lastTimestamp) > START_GRACE_PERIOD
             } else {
                 event.metadata != lastScrobble.metadata
             }
         } else {
-            event.position <= SKIP_MIN_DURATION && lastScrobble.lastPosition > SKIP_MIN_DURATION
+            event.position <= START_GRACE_PERIOD && lastScrobble.lastPosition > START_GRACE_PERIOD
         }
 
     data class Result(

@@ -14,7 +14,7 @@ import kotlin.uuid.Uuid
 
 private const val inTimeRange = "timestamp >= :start AND timestamp < :end"
 private const val isFullPlay = "timePlayed >= MIN(duration / 2, 240 * 1000) AND NOT isDeleted"
-private const val isNotSkip = "timePlayed >= 2 * 1000 AND NOT isDeleted"
+private const val isNotSkip = "timePlayed >= MIN(duration / 2, 15 * 1000) AND NOT isDeleted"
 
 @Dao
 @DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)

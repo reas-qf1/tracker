@@ -44,7 +44,7 @@ class MediaEventRelay(
 
     fun map(event: RawEvent, lastEvent: RawEvent?): RawEvent {
         var newEvent = event
-        if (event.isPlaying && event.position < EventProcessor.SKIP_MIN_DURATION) {
+        if (event.isPlaying && event.position < EventProcessor.START_GRACE_PERIOD) {
             newEvent = newEvent.copy(info = newEvent.info.copy(position = Duration.ZERO))
         }
         if (lastEvent != null && lastEvent.metadata == event.metadata) {
