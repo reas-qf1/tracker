@@ -51,6 +51,7 @@ class DataRepository(
                 .selectAll()
                 .where { TrackTable.name eq name }
                 .andWhere { TrackTable.artistIds eq artists.ids.joinToString(",") }
+                .andWhere { TrackTable.albumId eq album?.id }
                 .singleOrNull()
             if (track == null) return@readTransaction null
             val artistIds = track[TrackTable.artistIds].split(",").map { it.toLong() }

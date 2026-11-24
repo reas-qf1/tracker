@@ -84,7 +84,7 @@ class EventProcessor(
             }
 
             val isNewPlay = isNewPlay(event, play)
-            logger.debug { "$event $play decided $isNewPlay" }
+            logger.debug { "isNewPlay: $isNewPlay" }
 
             if (isNewPlay) {
                 if (play.lastPlaying) {
@@ -105,7 +105,6 @@ class EventProcessor(
                 play.associatedEvents.add(event.info)
                 if (state < State.UPDATING) state = State.UPDATING
             }
-            logger.debug { "finished processing $event" }
         }
 
         if (play != null) {

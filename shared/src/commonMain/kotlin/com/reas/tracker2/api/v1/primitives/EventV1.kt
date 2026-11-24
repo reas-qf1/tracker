@@ -1,5 +1,6 @@
 package com.reas.tracker2.api.v1.primitives
 
+import com.reas.tracker2.api.helpers.DurationSerializer
 import com.reas.tracker2.api.helpers.TimestampSerializer
 import com.reas.tracker2.shared.*
 import kotlinx.serialization.Serializable
@@ -11,14 +12,16 @@ import kotlin.time.Instant
 data class EventV1(
     val track: String,
     val artist: String? = null,
-    val artists: ArtistListV1? = null,
+    val artists: RawArtistListV1? = null,
     val album: String? = null,
     val albumArtist: String? = null,
-    val albumArtists: ArtistListV1? = null,
+    val albumArtists: RawArtistListV1? = null,
     val isPlaying: Boolean,
     @Serializable(with = TimestampSerializer::class)
     val timestamp: Instant,
+    @Serializable(with = DurationSerializer::class)
     val position: Duration,
+    @Serializable(with = DurationSerializer::class)
     val duration: Duration,
     val speed: Double = 1.0,
     val app: String? = null,
@@ -36,7 +39,6 @@ data class EventV1(
         require(album != null || albumArtist == null) { "albumArtist provided but no album" }
         require(album != null || albumArtists == null) { "albumArtists provided but no album" }
         if (album != null) {
-            require(albumArtist != null || albumArtists != null) { "either albumArtist or albumArtists should be provided" }
             require(albumArtist == null || albumArtists == null) { "albumArtist and albumArtists cannot be provided at the same time" }
             require(albumArtist == null || albumArtist.isNotBlank()) { "albumArtist cannot be blank" }
             require(albumArtists == null || albumArtists.list.isNotEmpty()) { "albumArtists cannot be empty" }
@@ -50,15 +52,15 @@ data class EventV1(
 
     fun toEvent(username: String, clientName: String) =
         RawEvent(
-            metadata = RawMetadata(
+            metadata = RawMetadata.create(
                 track = track,
-                artists = RawArtistList(
+                artists = RawArtistList.create(
                     raw = artist ?: artists!!.raw,
                     list = artists?.list,
                 ),
                 album = album,
                 albumArtists = if (albumArtist != null || albumArtists != null) {
-                    RawArtistList(
+                    RawArtistList.create(
                         raw = albumArtist ?: albumArtists!!.raw,
                         list = albumArtists?.list,
                     )

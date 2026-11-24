@@ -25,6 +25,8 @@ dependencies {
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.contentNegotiation)
     implementation(libs.ktor.server.websockets)
+    implementation(libs.ktor.server.call.logging)
+    implementation(libs.ktor.server.call.id)
     implementation(libs.ktor.serialization.json)
     implementation(libs.logging)
     implementation(platform(libs.koin.bom))

@@ -1,7 +1,8 @@
 package com.reas.tracker2.api.v1
 
-import com.reas.tracker2.UserPrincipal
+import com.reas.tracker2.ClientPrincipal
 import com.reas.tracker2.api.v1.routes.SubmitRequestV1
+import com.reas.tracker2.parseBody
 import com.reas.tracker2.wrap
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -11,6 +12,8 @@ import org.koin.ktor.ext.inject
 import kotlin.time.Instant
 
 private fun RoutingCall.usernameFromJwt(): String = principal<JWTPrincipal>()!!.payload.getClaim("username").asString()
+
+private fun RoutingCall.client(): ClientPrincipal = principal<ClientPrincipal>()!!
 
 fun Route.apiV1() {
     val api: ApiV1Impl by inject()
@@ -22,13 +25,13 @@ fun Route.apiV1() {
 
     post("/register") {
         wrap {
-            val (username, password) = call.receive<LoginInfoV1>()
+            val (username, password) = call.parseBody<LoginInfoV1>()
             api.register(username, password)
         }
     }
     post("/login") {
         wrap {
-            val (username, password) = call.receive<LoginInfoV1>()
+            val (username, password) = call.parseBody<LoginInfoV1>()
             api.login(username, password)
         }
     }
@@ -102,9 +105,9 @@ fun Route.apiV1() {
     authenticate("api-token") {
         post("/submit") {
             wrap {
-                val principal = call.principal<UserPrincipal>()!!
-                val events = call.receive<SubmitRequestV1>()
-                api.submit(events.events, principal)
+                val client = call.client()
+                val events = call.parseBody<SubmitRequestV1>()
+                api.submit(events.events, client)
             }
         }
     }

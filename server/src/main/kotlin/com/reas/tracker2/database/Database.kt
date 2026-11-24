@@ -29,7 +29,7 @@ fun createInMemoryDatabase(): Database {
         databaseConfig = DatabaseConfig {
             useNestedTransactions = true
             defaultMinRetryDelay = 10
-            defaultMaxRetryDelay = 1000
+            defaultMaxAttempts = 2
         },
     )
     createTables(database)
@@ -43,7 +43,7 @@ fun createSQLiteDatabase(): Database {
         databaseConfig = DatabaseConfig {
             useNestedTransactions = true
             defaultMinRetryDelay = 10
-            defaultMaxRetryDelay = 1000
+            defaultMaxAttempts = 2
         },
     )
     createTables(database)

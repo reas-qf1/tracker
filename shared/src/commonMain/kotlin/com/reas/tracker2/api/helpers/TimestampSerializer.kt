@@ -15,19 +15,21 @@ class TimestampSerializer : KSerializer<Instant> {
 
     override fun serialize(encoder: Encoder, value: Instant) {
         require(encoder is JsonEncoder)
-        val element = encoder.json.encodeToJsonElement(Instant.serializer(), value)
+        val element = encoder.json.encodeToJsonElement(Long.serializer(), value.toEpochMilliseconds())
         encoder.encodeJsonElement(element)
     }
 
     override fun deserialize(decoder: Decoder): Instant {
         require(decoder is JsonDecoder)
-        val element = decoder.decodeJsonElement() as JsonPrimitive
+        val element = decoder.decodeJsonElement() as? JsonPrimitive ?: invalidInput()
         if (element.isString) return Instant.parse(element.content)
-        val value = element.doubleOrNull?.toLong() ?: element.long
+        val value = element.doubleOrNull?.toLong() ?: element.longOrNull ?: invalidInput()
         return if (value <= 100_000_000_000) {
             Instant.fromEpochSeconds(value)
         } else {
             Instant.fromEpochMilliseconds(value)
         }
     }
+
+    private fun invalidInput(): Nothing = throw IllegalArgumentException("timestamp must be a string or a number")
 }

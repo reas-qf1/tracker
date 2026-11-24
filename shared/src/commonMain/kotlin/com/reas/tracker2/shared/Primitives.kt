@@ -7,6 +7,8 @@ import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+private fun sanitize(s: String): String = s.replace("\n", " ").replace("\t", " ")
+
 @Serializable
 data class ArtistList(
     val artists: List<Artist>,
@@ -44,11 +46,20 @@ data class ArtistList(
     override fun subList(fromIndex: Int, toIndex: Int): List<Artist> = artists.subList(fromIndex, toIndex)
 }
 
+@ConsistentCopyVisibility
 @Serializable
-data class RawArtistList(
+data class RawArtistList private constructor(
     val raw: String,
     val list: List<String>? = null,
-)
+) {
+    companion object {
+        fun create(raw: String, list: List<String>? = null) =
+            RawArtistList(
+                raw = sanitize(raw),
+                list = list?.let { it.map { sanitize(it) } },
+            )
+    }
+}
 
 @Serializable
 data class Artist(
@@ -131,13 +142,28 @@ data class Track(
     }
 }
 
+@ConsistentCopyVisibility
 @Serializable
-data class RawMetadata(
+data class RawMetadata private constructor(
     val track: String,
     val artists: RawArtistList,
     val album: String?,
     val albumArtists: RawArtistList?,
-)
+) {
+    companion object {
+        fun create(
+            track: String,
+            artists: RawArtistList,
+            album: String?,
+            albumArtists: RawArtistList?,
+        ) = RawMetadata(
+            track = sanitize(track),
+            artists = artists,
+            album = album?.let { sanitize(it) },
+            albumArtists = albumArtists,
+        )
+    }
+}
 
 @Serializable
 enum class EventState {

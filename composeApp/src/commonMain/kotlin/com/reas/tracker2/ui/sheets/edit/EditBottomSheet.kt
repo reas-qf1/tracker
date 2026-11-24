@@ -107,11 +107,11 @@ fun EditBottomSheet(
             enabled = canSave,
             modifier = Modifier.padding(12.dp),
             onConfirm = {
-                val newMetadata = RawMetadata(
+                val newMetadata = RawMetadata.create(
                     track = track,
-                    artists = RawArtistList(artists),
+                    artists = RawArtistList.create(artists),
                     album = album.ifEmpty { null },
-                    albumArtists = if (album.isEmpty()) null else RawArtistList(albumArtists.ifEmpty { artists }),
+                    albumArtists = if (album.isEmpty()) null else RawArtistList.create(albumArtists.ifEmpty { artists }),
                 )
                 viewModel.edit(scrobble, newMetadata)
             },

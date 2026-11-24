@@ -9,6 +9,8 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.callid.*
+import io.ktor.server.plugins.calllogging.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.websocket.*
@@ -24,7 +26,7 @@ fun main(args: Array<String>) {
 }
 
 @Serializable
-data class UserPrincipal(
+data class ClientPrincipal(
     val username: String,
     val clientName: String,
 )
@@ -86,11 +88,17 @@ fun Application.installPlugins() {
             authenticate { token ->
                 try {
                     val (userId, clientId) = authRepository.validateToken(token.token)
-                    UserPrincipal(userId, clientId)
+                    ClientPrincipal(userId, clientId)
                 } catch (e: AuthRepository.TokenValidationException) {
                     null
                 }
             }
         }
+    }
+    install(CallId) {
+        generate(6, "qwertyuiopasdfghjklzxcvbnm")
+    }
+    install(CallLogging) {
+        callIdMdc("call-id")
     }
 }

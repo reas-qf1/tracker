@@ -1,20 +1,23 @@
 package com.reas.tracker2.api.v1.primitives
 
-import kotlinx.serialization.KeepGeneratedSerializer
+import com.reas.tracker2.shared.ArtistList
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
 
-class ArtistListV1Serializer : JsonTransformingSerializer<ArtistListV1>(ArtistListV1.generatedSerializer()) {
-    override fun transformSerialize(element: JsonElement): JsonElement =
-        element as? JsonObject ?: buildJsonObject {
-            put("artists", element as JsonArray)
-            put("raw", element.jsonArray.joinToString(", ") { (it as JsonPrimitive).content })
-        }
-}
-
-@KeepGeneratedSerializer
-@Serializable(with = ArtistListV1Serializer::class)
+@Serializable
 data class ArtistListV1(
-    val list: List<String>,
-    val raw: String,
-)
+    val string: String,
+    val list: List<IDObjectV1>,
+) {
+    companion object {
+        fun from(artistList: ArtistList): ArtistListV1 =
+            ArtistListV1(
+                string = artistList.raw,
+                list = artistList.artists.map {
+                    IDObjectV1(
+                        id = it.id,
+                        name = it.name,
+                    )
+                },
+            )
+    }
+}

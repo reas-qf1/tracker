@@ -2,13 +2,14 @@ package com.reas.tracker2.api.v1
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.reas.tracker2.BadRequest
+import com.reas.tracker2.ClientPrincipal
 import com.reas.tracker2.Conflict
 import com.reas.tracker2.Unauthorized
-import com.reas.tracker2.UserPrincipal
 import com.reas.tracker2.api.v1.primitives.EventV1
+import com.reas.tracker2.api.v1.primitives.ScrobbleV1
 import com.reas.tracker2.database.AuthRepository
 import com.reas.tracker2.internalsServer.LocalServer
-import com.reas.tracker2.shared.Scrobble
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.*
@@ -22,6 +23,8 @@ class ApiV1Impl : KoinComponent {
     lateinit var jwtIssuer: String
     lateinit var jwtAudience: String
 
+    private fun isValidName(s: String): Boolean = s.matches(Regex("^[a-zA-Z0-9_.\\-]*$"))
+
     fun setJwtParameters(secret: String, issuer: String, audience: String) {
         jwtSecret = secret
         jwtIssuer = issuer
@@ -29,6 +32,9 @@ class ApiV1Impl : KoinComponent {
     }
 
     fun register(username: String, password: String) {
+        if (!isValidName(username)) {
+            throw BadRequest("invalid username")
+        }
         try {
             authRepository.addUser(username, password)
         } catch (e: AuthRepository.UserAlreadyExistsException) {
@@ -55,6 +61,9 @@ class ApiV1Impl : KoinComponent {
     fun getClients(username: String): List<String> = authRepository.getClients(username)
 
     fun addClient(username: String, clientName: String) {
+        if (!isValidName(clientName)) {
+            throw BadRequest("invalid client name")
+        }
         authRepository.addClient(username, clientName)
     }
 
@@ -84,6 +93,6 @@ class ApiV1Impl : KoinComponent {
         authRepository.deleteTokenByHash(username, hash)
     }
 
-    suspend fun submit(events: List<EventV1>, user: UserPrincipal): List<Scrobble> =
-        server.submit(events.map { it.toEvent(user.username, user.clientName) })
+    suspend fun submit(events: List<EventV1>, client: ClientPrincipal): List<ScrobbleV1> =
+        server.submit(events.map { it.toEvent(client.username, client.clientName) }).map { ScrobbleV1.from(it) }
 }

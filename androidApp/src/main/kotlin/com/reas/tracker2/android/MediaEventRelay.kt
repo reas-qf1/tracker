@@ -78,11 +78,11 @@ class MediaEventRelay(
         }
 
         val event = RawEvent(
-            metadata = RawMetadata(
+            metadata = RawMetadata.create(
                 track = metadata.title!!,
-                artists = RawArtistList(metadata.artist!!),
+                artists = RawArtistList.create(metadata.artist!!),
                 album = metadata.album,
-                albumArtists = metadata.albumArtist?.let { RawArtistList(it) },
+                albumArtists = metadata.albumArtist?.let { RawArtistList.create(it) },
             ),
             duration = metadata.duration.milliseconds,
             info = EventInfo(
