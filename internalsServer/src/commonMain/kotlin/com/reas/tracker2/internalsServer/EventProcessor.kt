@@ -1,6 +1,7 @@
 package com.reas.tracker2.internalsServer
 
 import com.reas.tracker2.shared.Event
+import com.reas.tracker2.shared.EventState
 import com.reas.tracker2.shared.Scrobble
 import com.reas.tracker2.shared.Source
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -50,7 +51,7 @@ class EventProcessor(
         source: Source,
         events: List<Event>,
     ) {
-        logger.debug { "processSingleSource($source): ${events.size} events" }
+        logger.debug { "  processSingleSource($source): ${events.size} events" }
         var eventsSorted = events.sortedBy { it.timestamp }
         while (eventsSorted.isNotEmpty()) {
             val firstTimestamp = eventsSorted.first().timestamp
@@ -80,7 +81,7 @@ class EventProcessor(
         nextScrobble: Scrobble?,
         events: List<Event>,
     ) {
-        logger.debug { "processBlock($prevScrobble, $nextScrobble): ${events.size} events" }
+        logger.debug { "    processBlock($prevScrobble, $nextScrobble): ${events.size} events" }
         var scrobble = prevScrobble
         var state = State.UNCHANGED
 
@@ -88,14 +89,17 @@ class EventProcessor(
         if (prevScrobble != null && prevScrobble.lastTimestamp > events.first().timestamp) {
             val lastIndex = prevScrobble.associatedEvents.indexOfFirst { it.timestamp > events.first().timestamp }
             eventsS = (
-                events + prevScrobble.associatedEvents.drop(lastIndex).map {
-                    Event(
-                        metadata = prevScrobble.metadata,
-                        duration = prevScrobble.duration,
-                        info = it,
-                        source = prevScrobble.source,
-                    )
-                }
+                events + prevScrobble.associatedEvents
+                    .drop(lastIndex)
+                    .filter { it.state != EventState.PLUGGED }
+                    .map {
+                        Event(
+                            metadata = prevScrobble.metadata,
+                            duration = prevScrobble.duration,
+                            info = it,
+                            source = prevScrobble.source,
+                        )
+                    }
             ).sortedBy { it.timestamp }
             repeat(prevScrobble.associatedEvents.size - lastIndex) {
                 val removedEvent = prevScrobble.associatedEvents.removeAt(prevScrobble.associatedEvents.lastIndex)
@@ -116,7 +120,7 @@ class EventProcessor(
         }
 
         eventsS.forEach { event ->
-            logger.debug { "started processing $event" }
+            logger.debug { "      processing $event" }
             if (scrobble == null) {
                 logger.debug { "play == null" }
                 scrobble = Scrobble.fromEvent(event)
