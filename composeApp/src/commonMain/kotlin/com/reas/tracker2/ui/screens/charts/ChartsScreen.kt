@@ -9,7 +9,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.reas.tracker2.ui.components.ChartTypeSelectionChip
 import com.reas.tracker2.ui.components.LazyDoubleChartColumn
-import com.reas.tracker2.ui.components.ScrollToTopButton
 import com.reas.tracker2.ui.components.SortOrderSelectionChip
 import com.reas.tracker2.ui.navigation.ApplicationState
 import com.reas.tracker2.ui.navigation.ChartSort
@@ -33,7 +32,6 @@ fun ChartsScreen(
     val charts = rememberAsPagingItems { viewModel.getInfo(screen.type, ChartSort.TIME) }
     val chartsByPlayCount = rememberAsPagingItems { viewModel.getInfo(screen.type, ChartSort.PLAYS) }
 
-    ScrollToTopButton(screen.screenState, scrollState)
     Column(modifier = modifier.padding(horizontal = 5.dp)) {
         Row {
             ChartTypeSelectionChip(chartType, { applicationState.navigate(screen.copy(type = it)) })
@@ -42,6 +40,7 @@ fun ChartsScreen(
         }
 
         LazyDoubleChartColumn(
+            screen.screenState,
             scrollState,
             sort.byTime,
             charts,

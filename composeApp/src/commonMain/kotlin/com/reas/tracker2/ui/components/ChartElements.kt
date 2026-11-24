@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
 import com.reas.tracker2.ui.navigation.InfoBottomSheet
+import com.reas.tracker2.ui.navigation.ScreenState
 import kotlinx.coroutines.flow.collectLatest
 
 // TODO kill it with fire
@@ -61,6 +62,7 @@ fun DoubleChartColumn(
 
 @Composable
 fun LazyDoubleChartColumn(
+    screenState: ScreenState,
     state: LazyListState,
     sortedByTime: Boolean,
     itemsByTime: LazyPagingItems<ChartEntryUiState>,
@@ -78,6 +80,7 @@ fun LazyDoubleChartColumn(
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
+            ScrollToTopButton(screenState, state1)
             LazyChartColumn(state1, itemsByTime, onClick, modifier)
             LaunchedEffect(state1) {
                 snapshotFlow {
@@ -94,6 +97,7 @@ fun LazyDoubleChartColumn(
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
+            ScrollToTopButton(screenState, state2)
             LazyChartColumn(state2, itemsByPlays, onClick, modifier)
             LaunchedEffect(state2) {
                 snapshotFlow {
