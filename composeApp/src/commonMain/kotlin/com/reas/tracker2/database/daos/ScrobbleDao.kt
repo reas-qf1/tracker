@@ -36,8 +36,24 @@ interface ScrobbleDao {
     suspend fun getScrobble(id: Uuid): ScrobbleWithData?
 
     @Transaction
-    @Query("SELECT * FROM scrobbles WHERE sourceDevice = :device AND sourceApp = :app ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLastScrobbleFromSource(device: String?, app: String?): ScrobbleWithData?
+    @Query(
+        """
+        SELECT * FROM scrobbles
+        WHERE sourceDevice = :device AND sourceApp = :app AND timestamp <= :timestamp
+        ORDER BY timestamp DESC LIMIT 1
+     """,
+    )
+    suspend fun getScrobbleBefore(device: String?, app: String?, timestamp: Instant): ScrobbleWithData?
+
+    @Transaction
+    @Query(
+        """
+        SELECT * FROM scrobbles
+        WHERE sourceDevice = :device AND sourceApp = :app AND timestamp > :timestamp
+        ORDER BY timestamp DESC LIMIT 1
+     """,
+    )
+    suspend fun getScrobbleAfter(device: String?, app: String?, timestamp: Instant): ScrobbleWithData?
 
     @Transaction
     @Query("UPDATE scrobbles SET isDeleted = 1 WHERE id = :id")
@@ -461,6 +477,7 @@ interface ScrobbleDao {
     @Query(
         """
         UPDATE scrobbles SET 
+            timestamp = :timestamp,
             timePlayed = :timePlayed, lastPosition = :lastPosition, 
             lastPlaying = :lastPlaying, associatedEvents = :associatedEvents 
         WHERE id = :id
@@ -468,6 +485,7 @@ interface ScrobbleDao {
     )
     suspend fun updateAssociatedEvents(
         id: Uuid,
+        timestamp: Instant,
         timePlayed: Duration,
         lastPosition: Duration,
         lastPlaying: Boolean,
@@ -477,7 +495,7 @@ interface ScrobbleDao {
     @Transaction
     suspend fun updateAssociatedEvents(plays: List<ScrobbleEntity>) {
         for (play in plays) {
-            updateAssociatedEvents(play.id, play.timePlayed, play.lastPosition, play.lastPlaying, play.associatedEvents)
+            updateAssociatedEvents(play.id, play.timestamp, play.timePlayed, play.lastPosition, play.lastPlaying, play.associatedEvents)
         }
     }
 }

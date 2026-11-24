@@ -8,6 +8,7 @@ import com.reas.tracker2.internalsServer.Repository
 import com.reas.tracker2.shared.*
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class AppRepository(
@@ -106,8 +107,11 @@ class AppRepository(
 
     override suspend fun getScrobble(id: Uuid): Scrobble? = db.scrobbleDao().getScrobble(id)?.toObject()
 
-    override suspend fun getLastScrobbleFromSource(source: Source): Scrobble? =
-        db.scrobbleDao().getLastScrobbleFromSource(source.client, source.app)?.toObject()
+    override suspend fun getScrobbleBefore(source: Source, timestamp: Instant): Scrobble? =
+        db.scrobbleDao().getScrobbleBefore(source.client, source.app, timestamp)?.toObject()
+
+    override suspend fun getScrobbleAfter(source: Source, timestamp: Instant): Scrobble? =
+        db.scrobbleDao().getScrobbleAfter(source.client, source.app, timestamp)?.toObject()
 
     override suspend fun getOriginalMetadata(scrobble: Scrobble): Track? = db.editDao().getFirstEdit(scrobble.id)?.metadataToObject()
 

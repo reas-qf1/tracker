@@ -1,6 +1,7 @@
 package com.reas.tracker2.internalsServer
 
 import com.reas.tracker2.shared.*
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 interface Repository {
@@ -37,7 +38,9 @@ interface Repository {
 
     suspend fun getNowPlaying(): List<Scrobble>
 
-    suspend fun getLastScrobbleFromSource(source: Source): Scrobble?
+    suspend fun getScrobbleBefore(source: Source, timestamp: Instant): Scrobble?
+
+    suspend fun getScrobbleAfter(source: Source, timestamp: Instant): Scrobble?
 
     // edits
     suspend fun insertEdit(edit: ScrobbleEdit)

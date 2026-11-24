@@ -3,12 +3,10 @@ package com.reas.tracker2.database
 import com.reas.tracker2.internalsServer.Repository
 import com.reas.tracker2.shared.*
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class DataRepository(
@@ -187,6 +185,7 @@ class DataRepository(
         writeTransaction {
             for (scrobble in scrobbles) {
                 ScrobbleTable.update({ ScrobbleTable.id eq scrobble.id }) {
+                    it[ScrobbleTable.timestamp] = scrobble.timestamp
                     it[ScrobbleTable.timePlayed] = scrobble.timePlayed
                     it[ScrobbleTable.lastPosition] = scrobble.lastPosition
                     it[ScrobbleTable.lastPlaying] = scrobble.lastPlaying
@@ -205,7 +204,7 @@ class DataRepository(
                 .map { resultRowToScrobble(it) }
         }
 
-    override suspend fun getLastScrobbleFromSource(source: Source): Scrobble? =
+    override suspend fun getScrobbleBefore(source: Source, timestamp: Instant): Scrobble? =
         readTransaction {
             val (userId, clientId) = getClientIdByName(source.user, source.client)
             ScrobbleTable
@@ -213,6 +212,22 @@ class DataRepository(
                 .where { ScrobbleTable.user eq userId }
                 .andWhere { ScrobbleTable.client eq clientId }
                 .andWhere { ScrobbleTable.app eq source.app }
+                .andWhere { ScrobbleTable.timestamp lessEq timestamp }
+                .orderBy(ScrobbleTable.timestamp, SortOrder.DESC)
+                .limit(1)
+                .singleOrNull()
+                ?.let { resultRowToScrobble(it) }
+        }
+
+    override suspend fun getScrobbleAfter(source: Source, timestamp: Instant): Scrobble? =
+        readTransaction {
+            val (userId, clientId) = getClientIdByName(source.user, source.client)
+            ScrobbleTable
+                .selectAll()
+                .where { ScrobbleTable.user eq userId }
+                .andWhere { ScrobbleTable.client eq clientId }
+                .andWhere { ScrobbleTable.app eq source.app }
+                .andWhere { ScrobbleTable.timestamp greater timestamp }
                 .orderBy(ScrobbleTable.timestamp, SortOrder.DESC)
                 .limit(1)
                 .singleOrNull()
