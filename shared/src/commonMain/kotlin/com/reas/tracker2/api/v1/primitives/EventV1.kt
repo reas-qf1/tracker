@@ -2,7 +2,9 @@ package com.reas.tracker2.api.v1.primitives
 
 import com.reas.tracker2.api.helpers.DurationSerializer
 import com.reas.tracker2.api.helpers.TimestampSerializer
-import com.reas.tracker2.shared.*
+import com.reas.tracker2.shared.RawArtistList
+import com.reas.tracker2.shared.RawEvent
+import com.reas.tracker2.shared.Source
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlin.time.Duration
@@ -20,11 +22,12 @@ data class EventV1(
     @Serializable(with = TimestampSerializer::class)
     val timestamp: Instant,
     @Serializable(with = DurationSerializer::class)
-    val position: Duration,
+    val position: Duration? = null,
     @Serializable(with = DurationSerializer::class)
-    val duration: Duration,
+    val duration: Duration? = null,
     val speed: Double = 1.0,
     val app: String? = null,
+    val sessionId: String? = null,
     val other: JsonObject? = null,
 ) {
     init {
@@ -46,35 +49,32 @@ data class EventV1(
                 require(a.isNotBlank()) { "album artist ${i + 1}: cannot be blank" }
             }
         }
-        require(!position.isNegative()) { "position must be non-negative" }
-        require(!duration.isNegative()) { "duration must be non-negative" }
+        require((position == null && duration == null) || (position != null && duration != null)) {
+            "position and duration must be either both specified or both omitted"
+        }
     }
 
     fun toEvent(username: String, clientName: String) =
-        RawEvent(
-            metadata = RawMetadata.create(
-                track = track,
-                artists = RawArtistList.create(
-                    raw = artist ?: artists!!.raw,
-                    list = artists?.list,
-                ),
-                album = album,
-                albumArtists = if (albumArtist != null || albumArtists != null) {
-                    RawArtistList.create(
-                        raw = albumArtist ?: albumArtists!!.raw,
-                        list = albumArtists?.list,
-                    )
-                } else {
-                    null
-                },
+        RawEvent.create(
+            track = track,
+            artists = RawArtistList.create(
+                raw = artist ?: artists!!.raw,
+                list = artists?.list,
             ),
-            duration = duration,
-            info = EventInfo(
-                timestamp = timestamp,
-                position = position,
-                state = if (isPlaying) EventState.PLAYING else EventState.STOPPED,
-                speed = speed,
-            ),
-            source = Source(username, clientName, app ?: ""),
+            album = album,
+            albumArtists = if (albumArtist != null || albumArtists != null) {
+                RawArtistList.create(
+                    raw = albumArtist ?: albumArtists!!.raw,
+                    list = albumArtists?.list,
+                )
+            } else {
+                null
+            },
+            duration = duration ?: Duration.ZERO,
+            timestamp = timestamp,
+            position = position ?: Duration.ZERO,
+            isPlaying = isPlaying,
+            speed = speed,
+            source = Source(username, clientName, app ?: "", sessionId ?: ""),
         )
 }

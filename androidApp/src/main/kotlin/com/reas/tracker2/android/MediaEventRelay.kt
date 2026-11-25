@@ -4,7 +4,9 @@ import android.media.MediaMetadata
 import android.media.session.PlaybackState
 import com.reas.tracker2.internalsServer.EventProcessor
 import com.reas.tracker2.internalsServer.LocalServer
-import com.reas.tracker2.shared.*
+import com.reas.tracker2.shared.RawArtistList
+import com.reas.tracker2.shared.RawEvent
+import com.reas.tracker2.shared.Source
 import com.reas.tracker2.util.NowPlayingNotificationManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
@@ -45,7 +47,7 @@ class MediaEventRelay(
     fun map(event: RawEvent, lastEvent: RawEvent?): RawEvent {
         var newEvent = event
         if (event.isPlaying && event.position < EventProcessor.START_GRACE_PERIOD) {
-            newEvent = newEvent.copy(info = newEvent.info.copy(position = Duration.ZERO))
+            newEvent = newEvent.withPosition(Duration.ZERO)
         }
         if (lastEvent != null && lastEvent.metadata == event.metadata) {
             if (lastEvent.isPlaying) {
@@ -53,11 +55,11 @@ class MediaEventRelay(
                 val actualDiff = (event.position - lastEvent.position) / event.speed
                 if ((expectedDiff - actualDiff).absoluteValue < GRACE_PERIOD) {
                     val actualPos = lastEvent.position + expectedDiff * event.speed
-                    newEvent = newEvent.copy(info = newEvent.info.copy(position = actualPos))
+                    newEvent = newEvent.withPosition(actualPos)
                 }
             } else {
                 if ((lastEvent.position - event.position).absoluteValue < GRACE_PERIOD) {
-                    newEvent = newEvent.copy(info = newEvent.info.copy(position = lastEvent.position))
+                    newEvent = newEvent.withPosition(lastEvent.position)
                 }
             }
         }
@@ -77,20 +79,16 @@ class MediaEventRelay(
             return
         }
 
-        val event = RawEvent(
-            metadata = RawMetadata.create(
-                track = metadata.title!!,
-                artists = RawArtistList.create(metadata.artist!!),
-                album = metadata.album,
-                albumArtists = metadata.albumArtist?.let { RawArtistList.create(it) },
-            ),
+        val event = RawEvent.create(
+            track = metadata.title!!,
+            artists = RawArtistList.create(metadata.artist!!),
+            album = metadata.album,
+            albumArtists = metadata.albumArtist?.let { RawArtistList.create(it) },
             duration = metadata.duration.milliseconds,
-            info = EventInfo(
-                timestamp = Instant.fromEpochMilliseconds(timestamp),
-                position = state.position.milliseconds,
-                state = if (state.state == PlaybackState.STATE_PLAYING) EventState.PLAYING else EventState.STOPPED,
-                speed = state.playbackSpeed.toDouble(),
-            ),
+            timestamp = Instant.fromEpochMilliseconds(timestamp),
+            position = state.position.milliseconds,
+            isPlaying = state.state == PlaybackState.STATE_PLAYING,
+            speed = state.playbackSpeed.toDouble(),
             source = Source.local(appId),
         )
 

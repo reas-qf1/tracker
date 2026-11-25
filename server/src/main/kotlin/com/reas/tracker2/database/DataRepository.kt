@@ -146,6 +146,7 @@ class DataRepository(
                 it[ScrobbleTable.user] = userId
                 it[ScrobbleTable.client] = clientId
                 it[ScrobbleTable.app] = scrobble.app
+                it[ScrobbleTable.sessionId] = scrobble.session
                 it[ScrobbleTable.associatedEvents] = scrobble.associatedEvents
             }
         }
@@ -176,6 +177,7 @@ class DataRepository(
                 this[ScrobbleTable.user] = userId
                 this[ScrobbleTable.client] = clientId
                 this[ScrobbleTable.app] = scrobble.app
+                this[ScrobbleTable.sessionId] = scrobble.session
                 this[ScrobbleTable.associatedEvents] = scrobble.associatedEvents
             }
         }
@@ -353,7 +355,7 @@ class DataRepository(
             duration = row[ScrobbleTable.duration],
             timePlayed = row[ScrobbleTable.timePlayed],
             timestamp = row[ScrobbleTable.timestamp],
-            source = Source(user, client, row[ScrobbleTable.app]),
+            source = Source(user, client, row[ScrobbleTable.app], row[ScrobbleTable.sessionId]),
             associatedEvents = row[ScrobbleTable.associatedEvents].toMutableList(),
         )
     }

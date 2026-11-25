@@ -38,7 +38,7 @@ class EventProcessor(
         val updatedScrobbles = mutableListOf<Scrobble>()
         val pluggedScrobbles = mutableListOf<Scrobble>()
 
-        snapshot.groupBy { it.source }.forEach { (source, events) ->
+        snapshot.groupBy { it.source.withoutSession() }.forEach { (source, events) ->
             processSingleSource(newScrobbles, updatedScrobbles, pluggedScrobbles, source, events)
         }
         return Result(newScrobbles, updatedScrobbles, pluggedScrobbles)
@@ -103,7 +103,7 @@ class EventProcessor(
             ).sortedBy { it.timestamp }
             repeat(prevScrobble.associatedEvents.size - lastIndex) {
                 val removedEvent = prevScrobble.associatedEvents.removeAt(prevScrobble.associatedEvents.lastIndex)
-                if (prevScrobble.lastPlaying) {
+                if (prevScrobble.lastPlaying && (!prevScrobble.durationUnknown || removedEvent.state != EventState.PLUGGED)) {
                     prevScrobble.timePlayed -= removedEvent.timestamp - prevScrobble.lastTimestamp
                 }
             }
@@ -122,14 +122,14 @@ class EventProcessor(
         eventsS.forEach { event ->
             logger.debug { "      processing $event" }
             if (scrobble == null) {
-                logger.debug { "play == null" }
+                logger.debug { "scrobble == null" }
                 scrobble = Scrobble.fromEvent(event)
                 state = State.NEW
                 return@forEach
             }
 
             // if past the end of previous play, plug hole
-            val shouldPlugHole = event.timestamp > scrobble.endTimestamp
+            val shouldPlugHole = !scrobble.durationUnknown && event.timestamp > scrobble.endTimestamp
             if (scrobble.lastPlaying && shouldPlugHole) {
                 scrobble.timePlayed += scrobble.endTimestamp - scrobble.lastTimestamp
                 scrobble.plug(scrobble.endTimestamp, scrobble.duration, scrobble.lastSpeed)
@@ -139,11 +139,13 @@ class EventProcessor(
             // if hole is plugged and needs to be unplugged, unplug
             if (scrobble.isPlugged && !shouldPlugHole) {
                 scrobble.associatedEvents.removeAt(scrobble.associatedEvents.size - 1)
-                scrobble.timePlayed -= scrobble.endTimestamp - scrobble.lastTimestamp
+                if (!scrobble.durationUnknown) {
+                    scrobble.timePlayed -= scrobble.endTimestamp - scrobble.lastTimestamp
+                }
             }
 
             // add time passed
-            if (scrobble.lastPlaying && !shouldPlugHole) {
+            if (scrobble.lastPlaying && !shouldPlugHole && scrobble.session == event.session) {
                 scrobble.timePlayed += event.timestamp - scrobble.lastTimestamp
             }
 
@@ -196,7 +198,9 @@ class EventProcessor(
     }
 
     private fun isNewPlay(event: Event, lastScrobble: Scrobble): Boolean =
-        if (event.isPlaying) {
+        if (lastScrobble.durationUnknown) {
+            event.metadata != lastScrobble.metadata || event.session != lastScrobble.session
+        } else if (event.isPlaying) {
             if (event.position <= START_GRACE_PERIOD) {
                 event.metadata != lastScrobble.metadata ||
                     lastScrobble.lastPosition > START_GRACE_PERIOD ||

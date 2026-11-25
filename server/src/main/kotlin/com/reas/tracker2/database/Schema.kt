@@ -75,6 +75,7 @@ object ScrobbleTable : UuidTable("scrobbles") {
     val lastPosition = long("last_position").transform(DurationTransformer())
     val lastPlaying = bool("last_playing")
     val app = text("app")
+    val sessionId = text("sessionId")
     val associatedEvents = text("associated_events").transform(EventInfoListTransformer())
     val other = text("other").nullable()
 

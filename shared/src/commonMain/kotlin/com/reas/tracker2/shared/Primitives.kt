@@ -3,6 +3,7 @@ package com.reas.tracker2.shared
 import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -208,6 +209,8 @@ data class Event(
         get() = source.client
     val app: String
         get() = source.app
+    val session: String
+        get() = source.session
     val timestamp: Instant
         get() = info.timestamp
     val position: Duration
@@ -220,8 +223,9 @@ data class Event(
         get() = info.speed
 }
 
+@ConsistentCopyVisibility
 @Serializable
-data class RawEvent(
+data class RawEvent private constructor(
     val metadata: RawMetadata,
     val duration: Duration,
     val info: EventInfo,
@@ -235,6 +239,38 @@ data class RawEvent(
         get() = info.speed
     val isPlaying: Boolean
         get() = info.state == EventState.PLAYING
+
+    fun withPosition(newPosition: Duration): RawEvent = copy(info = info.copy(position = newPosition))
+
+    companion object {
+        fun create(
+            track: String,
+            artists: RawArtistList,
+            album: String?,
+            albumArtists: RawArtistList?,
+            duration: Duration,
+            timestamp: Instant,
+            position: Duration,
+            isPlaying: Boolean,
+            speed: Double,
+            source: Source,
+        ) = RawEvent(
+            metadata = RawMetadata.create(
+                track = track,
+                artists = artists,
+                album = album,
+                albumArtists = albumArtists,
+            ),
+            duration = duration.coerceAtLeast(Duration.ZERO),
+            info = EventInfo(
+                timestamp = timestamp,
+                position = position.coerceAtLeast(Duration.ZERO),
+                state = if (isPlaying) EventState.PLAYING else EventState.STOPPED,
+                speed = if (speed <= 0.0) 1.0 else speed,
+            ),
+            source = source,
+        )
+    }
 }
 
 @Serializable
@@ -242,11 +278,14 @@ data class Source(
     val user: String,
     val client: String,
     val app: String,
+    val session: String,
 ) {
-    companion object {
-        fun user(client: String, app: String) = Source("", client, app)
+    fun withoutSession() = copy(session = "")
 
-        fun local(app: String) = Source("", "", app)
+    companion object {
+        fun user(client: String, app: String) = Source("", client, app, "")
+
+        fun local(app: String) = Source("", "", app, "")
     }
 }
 
@@ -282,6 +321,8 @@ data class Scrobble(
         get() = source.client
     val app: String
         get() = source.app
+    val session: String
+        get() = source.session
 
     val lastEvent: EventInfo
         get() = associatedEvents.last()
@@ -300,11 +341,17 @@ data class Scrobble(
         get() = lastPosition + (timestamp - lastTimestamp)
     val endTimestamp
         get() = lastEvent.let { lastEvent ->
-            lastEvent.timestamp + (duration - lastEvent.position) / lastEvent.speed
+            if (durationUnknown) {
+                lastEvent.timestamp + 10.minutes
+            } else {
+                lastEvent.timestamp + (duration - lastEvent.position) / lastEvent.speed
+            }
         }
 
     val isNowPlaying
         get() = lastPlaying && currentPosition <= duration
+    val durationUnknown
+        get() = duration == Duration.ZERO
 
     val key
         get() = "$id"

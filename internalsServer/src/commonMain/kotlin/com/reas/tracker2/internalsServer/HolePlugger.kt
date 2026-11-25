@@ -25,9 +25,11 @@ class HolePlugger(
         logger.debug { "launching job to plug hole for $key in $delayTime" }
         plugJobs[key] = scope.launch {
             delay(delayTime)
-            logger.debug { "plugging hole for $key" }
             plugJobs.remove(key) // so that no one can cancel us
-            scrobble.timePlayed += scrobble.endTimestamp - scrobble.lastTimestamp
+            logger.debug { "plugging hole for $key" }
+            if (!scrobble.durationUnknown) {
+                scrobble.timePlayed += scrobble.endTimestamp - scrobble.lastTimestamp
+            }
             scrobble.plug(scrobble.endTimestamp, scrobble.duration, scrobble.lastSpeed)
             repository.updateScrobbleEvents(listOf(scrobble))
         }
